@@ -10,7 +10,7 @@ public:
 
     // Public member functions
     void init();
-    
+    void drawPoint(int x, int y);
 
 private:
     // Private member variables

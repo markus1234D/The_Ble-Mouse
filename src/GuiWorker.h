@@ -11,6 +11,7 @@ public:
 
 private:
     // Private member variables
+    const char* html;
 
     // Private member functions
 };
