@@ -5,12 +5,13 @@
 class TouchWorker {
 public:
     // Constructor
-    TouchWorker();
+    // TouchWorker();
 
     // Destructor
-    ~TouchWorker();
+    // ~TouchWorker();
 
     // Public member functions
+    void init();
 
 private:
     // Private member variables
@@ -19,3 +20,7 @@ private:
 
     // Private member functions
 };
+
+void TouchWorker::init() {
+    
+}

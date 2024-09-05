@@ -8,17 +8,24 @@
 #include "pin_config.h"
 
 
-CommunicationWorker communicationWorker();
-DisplayWorker displayWorker();
-GuiWorker guiWorker();
-TouchWorker touchWorker();
+CommunicationWorker communicationWorker;
+DisplayWorker displayWorker;
+GuiWorker guiWorker;
+TouchWorker touchWorker;
 
 void setup() {
-  Serial.begin(115200);
-  delay(4000);
-  Serial.println("Hello World");
+    Serial.begin(115200);
+    delay(4000);
+    Serial.println("Hello World");
+    
+    communicationWorker.init();
+    displayWorker.init();
+    guiWorker.init();
+    touchWorker.init();
+
 }
 
 void loop() {
+    communicationWorker.handleCommunication();
     delay(1000);
 }

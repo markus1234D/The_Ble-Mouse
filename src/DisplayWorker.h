@@ -2,11 +2,11 @@
 
 class DisplayWorker {
 public:
-    // Constructor
-    DisplayWorker();
+    // // Constructor
+    // DisplayWorker();
 
-    // Destructor
-    ~DisplayWorker();
+    // // Destructor
+    // ~DisplayWorker();
 
     // Public member functions
     void init();
@@ -17,3 +17,12 @@ private:
 
     // Private member functions
 };
+
+void DisplayWorker::init() {
+    // TFT_eSPI tft = TFT_eSPI();
+    // tft.init();
+    // tft.setRotation(1);
+    // tft.fillScreen(TFT_BLACK);
+    // tft.setTextSize(2);
+    // tft.setTextColor(TFT_WHITE);
+}

@@ -370,7 +370,7 @@ void setup() {
 
     tft.init();
     tft.setRotation(1);
-    tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_RED);
 
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
