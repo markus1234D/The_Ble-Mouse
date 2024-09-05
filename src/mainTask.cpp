@@ -18,7 +18,7 @@ void setup() {
     delay(4000);
     Serial.println("Hello World");
     
-    communicationWorker.init();
+    // communicationWorker.init();
     displayWorker.init();
     guiWorker.init();
     touchWorker.init();
@@ -26,6 +26,7 @@ void setup() {
 }
 
 void loop() {
-    communicationWorker.handleCommunication();
+    // communicationWorker.handleCommunication();
+    touchWorker.handleTouch();
     delay(1000);
 }

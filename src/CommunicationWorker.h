@@ -14,10 +14,10 @@ public:
     // ~CommunicationWorker();
     
     // Public member variables
-    const char* ssid = "FRITZ!Mox";
-    const char* password = "BugolEiz42";
-    // const char *ssid = "SM-Fritz";
-    // const char *password = "47434951325606561069";
+    // const char* ssid = "FRITZ!Mox";
+    // const char* password = "BugolEiz42";
+    const char *ssid = "SM-Fritz";
+    const char *password = "47434951325606561069";
     // const char* ssid = "ZenFone7 Pro_6535";
     // const char* password = "e24500606";
 
