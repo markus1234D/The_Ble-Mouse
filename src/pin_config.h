@@ -1,5 +1,7 @@
 #pragma once
 
+#define TOUCH_ARRAY_SIZE 10
+
 #define WIFI_SSID                    "FRITZ!Mox"
 #define WIFI_PASSWORD               "BugolEiz42"
 

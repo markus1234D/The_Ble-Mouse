@@ -3,11 +3,11 @@
 #include "pin_config.h"
 #include <Wire.h>
 
-#define TOUCH_ARRAY_SIZE 10
 
 
 class TouchWorker {
-    typedef void (TouchWorker::*functionPointer)(void);
+    typedef void (*functionPointer)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx);
+
 
 public:
     // Constructor
@@ -21,9 +21,9 @@ public:
     void handleTouch();
     bool getTouch(int &x, int &y);
     int pasteIdx(int steps=0);
-    void onPress(TouchWorker::functionPointer callback);
-    void onMove(TouchWorker::functionPointer callback);
-    void onRelease(TouchWorker::functionPointer callback);
+    void onPress(void (*callback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx));
+    void onMove(void (*callback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx));
+    void onRelease(void (*callback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx));
 
 private:
     // Private member variables
@@ -31,19 +31,27 @@ private:
     TouchDrvCSTXXX touch;
     unsigned long lastMillis = 0;
     int v_pasteIdx = 0;
-    TouchWorker::functionPointer onPressCallback = NULL;
-    TouchWorker::functionPointer onMoveCallback = NULL;
-    TouchWorker::functionPointer onReleaseCallback = NULL;
+    void (*onPressCallback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx) = NULL;
+    void (*onMoveCallback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx) = NULL;
+    void (*onReleaseCallback)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx) = NULL;
 
     enum DataIdx {
     TOUCH_X,
     TOUCH_Y,
     HOME_BUTTON
-};
-
-
+    };
     // Private member functions
 };
+
+void TouchWorker::onPress(void (*func)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx)) {
+    onPressCallback = func;
+}
+void TouchWorker::onMove(void (*func)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx)) {
+    onMoveCallback = func;
+}
+void TouchWorker::onRelease(void (*func)(int (&array)[TOUCH_ARRAY_SIZE][3], int currentIdx)) {
+    onReleaseCallback = func;
+}
 
 int TouchWorker::pasteIdx(int steps){
     return (v_pasteIdx + steps) % TOUCH_ARRAY_SIZE;
@@ -65,11 +73,18 @@ void TouchWorker::handleTouch() {
             // Serial.println("Touch detected");
             if(x_y_homeTouch[TouchWorker::pasteIdx(-1)][TouchWorker::DataIdx::TOUCH_X] == -1) {
                 //press
-                Serial.println("First Touch");
+                // Serial.println("First Touch");
                 if(onPressCallback != NULL) {
-                    (this->*onPressCallback)();
+                    (this->onPressCallback)(x_y_homeTouch, pasteIdx());
                 }
+            } else {
+                //move
+                // Serial.println("Touch moved");
+                if(onMoveCallback != NULL) {
+                    (this->onMoveCallback)(x_y_homeTouch, v_pasteIdx);
+                } 
             }
+
             // Serial.println("touch x: " + String(xArr) + " y: " + String(yArr));
             // tft.fillCircle(/* 320- */yArr, 170-xArr, 5, TFT_WHITE);
             // webSocketServer.broadcastTXT("/coord?X=" + String(xArr) + "&Y=" + String(yTouch));
@@ -78,14 +93,17 @@ void TouchWorker::handleTouch() {
             x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X] = -1;
             x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y] = -1;
             // Serial.println("Touch not ");
-            if (x_y_homeTouch[TouchWorker::pasteIdx(-2)][TouchWorker::DataIdx::TOUCH_X] != -1){
+            if (x_y_homeTouch[TouchWorker::pasteIdx(-1)][TouchWorker::DataIdx::TOUCH_X] != -1){
                 //release
-                Serial.println("Touch released");
+                // Serial.println("Touch released");
                 // webSocketServer.broadcastTXT("release");
+                if(onReleaseCallback != NULL) {
+                    (this->onReleaseCallback)(x_y_homeTouch, pasteIdx());
+                }
             }
         }
-        Serial.println("Touch x: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X]) + " y: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y]));
-        v_pasteIdx++;
+        // Serial.println("Touch x: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X]) + " y: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y]));
+        v_pasteIdx = pasteIdx(1);
     }
 }
 
@@ -133,12 +151,12 @@ void TouchWorker::init() {
     // touch.sleep();
 
     // Set touch max xy
-    // touch.setMaxCoordinates(536, 240);
+    touch.setMaxCoordinates(EXAMPLE_LCD_V_RES, EXAMPLE_LCD_H_RES);
 
     // Set swap xy
     // touch.setSwapXY(true);
 
     // Set mirror xy
-    // touch.setMirrorXY(true, false);
+    touch.setMirrorXY(true, true);
 
 }
