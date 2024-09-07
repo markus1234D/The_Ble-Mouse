@@ -65,11 +65,12 @@ void TouchWorker::handleTouch() {
         // Serial.println("Touch number: " + String(touchNum));
         int16_t xArr, yArr;
         uint16_t touched = touch.getPoint(&xArr, &yArr, 1);
-
+        int x = touched ? (int)xArr : -1;
+        int y = touched ? (int)yArr : -1;
+        x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X] = x;
+        x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y] = y;
 
         if(touched > 0){
-            x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X] = round((int)xArr);
-            x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y] = round((int)yArr);
             // Serial.println("Touch detected");
             if(x_y_homeTouch[TouchWorker::pasteIdx(-1)][TouchWorker::DataIdx::TOUCH_X] == -1) {
                 //press
@@ -90,9 +91,6 @@ void TouchWorker::handleTouch() {
             // webSocketServer.broadcastTXT("/coord?X=" + String(xArr) + "&Y=" + String(yTouch));
             
         } else {
-            x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X] = -1;
-            x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y] = -1;
-            // Serial.println("Touch not ");
             if (x_y_homeTouch[TouchWorker::pasteIdx(-1)][TouchWorker::DataIdx::TOUCH_X] != -1){
                 //release
                 // Serial.println("Touch released");
@@ -102,7 +100,7 @@ void TouchWorker::handleTouch() {
                 }
             }
         }
-        // Serial.println("Touch x: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X]) + " y: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y]));
+        // Serial.println("idx: " + String(pasteIdx()) + " x: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_X]) + " y: " + String(x_y_homeTouch[pasteIdx()][TouchWorker::DataIdx::TOUCH_Y]));
         v_pasteIdx = pasteIdx(1);
     }
 }
