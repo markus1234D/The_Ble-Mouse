@@ -54,7 +54,11 @@ void TouchWorker::onRelease(void (*func)(int (&array)[TOUCH_ARRAY_SIZE][3], int 
 }
 
 int TouchWorker::pasteIdx(int steps){
-    return (v_pasteIdx + steps) % TOUCH_ARRAY_SIZE;
+    int idx = (v_pasteIdx + steps) % TOUCH_ARRAY_SIZE;
+    if (idx < 0) {
+        idx = TOUCH_ARRAY_SIZE + idx;
+    }
+    return idx;
 }
 
 void TouchWorker::handleTouch() {
