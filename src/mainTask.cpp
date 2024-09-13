@@ -3,7 +3,7 @@
 #include "DisplayWorker.h"
 #include "GuiWorker.h"
 #include "TouchWorker.h"
-
+#include "CST816TouchWorker.h"
 // #include "TFT_eSPI.h"
 #include "pin_config.h"
 #include <BleMouse.h>
@@ -16,6 +16,7 @@ CommunicationWorker communicationWorker;
 DisplayWorker displayWorker;
 GuiWorker guiWorker;
 TouchWorker touchWorker;
+CST816TouchWorker cst816touchWorker;
 
 int posModulo(int num, int mod){
     int rest = (num) % mod;
@@ -98,17 +99,19 @@ void setup() {
     Serial.println("Hello World");
     
     // communicationWorker.init();
-    displayWorker.init();
-    guiWorker.init();
-    touchWorker.init();
+    // displayWorker.init();
+    // guiWorker.init();
+    // touchWorker.init();
 
-    touchWorker.onPress(&joystickMousePressFunc);
-    touchWorker.onRelease(&joystickMouseReleaseFunc);
-    touchWorker.onMove(&mouseMoveFunc);
+    // touchWorker.onPress(&joystickMousePressFunc);
+    // touchWorker.onRelease(&joystickMouseReleaseFunc);
+    // touchWorker.onMove(&mouseMoveFunc);
+    cst816touchWorker.init();
 }
 
 void loop() {
     // communicationWorker.handleCommunication();
-    touchWorker.handleTouch();
+    // touchWorker.handleTouch();
     // delay(500);
+    cst816touchWorker.handleTouch();
 }
