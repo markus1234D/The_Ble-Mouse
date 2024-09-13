@@ -75,8 +75,8 @@ class CST816Touch {
 		int							m_iLastTouchX;			//where
 		int							m_iLastTouchY;			//where
 		
-		bool						m_bTouchConsumed;
-		bool						m_bGestureConsumed;
+		// bool						m_bTouchConsumed;
+		// bool						m_bGestureConsumed;
 	
 	private:
 		unsigned long	millisDiff(const unsigned long& ulStart, const unsigned long& ulEnd);

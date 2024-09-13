@@ -346,7 +346,6 @@ bool CST816Touch::handleGesture(gesture_t eGesture, int x, int y, bool currently
 		m_iLastGestureX = x;
 		m_iLastGestureY = y;
 
-		m_bGestureConsumed = false;
 		m_ulLastGestureTime = millis();
 		if (m_pTouchSubscriber != 0) {
 			m_pTouchSubscriber->gestureNotification(this, m_eLastGesture, !currentlyPressed);
@@ -414,7 +413,6 @@ bool CST816Touch::handleTouch() {
 		m_iLastTouchX = x;
 		m_iLastTouchY = y;
 		if (bReportAnEvent) {
-			m_bTouchConsumed = false;
 			if (m_pTouchSubscriber != 0) {
 				m_pTouchSubscriber->touchNotification(this, m_iLastTouchX, m_iLastTouchY, !currentlyPressed);
 			}
@@ -490,15 +488,8 @@ bool CST816Touch::handleTouch() {
  * When x=y=0, please assume no touch ever happened.
  */
 void CST816Touch::getLastTouchPosition(int& x, int& y) {
-	if (!m_bTouchConsumed) {
-		m_bTouchConsumed = true;
-		x = m_iLastTouchX;
-		y = m_iLastTouchY;
-	} else {
-		x = 0;
-		y = 0;
-	}
-	
+	x = m_iLastTouchX;
+	y = m_iLastTouchY;
 }
 
 /**
@@ -507,24 +498,19 @@ void CST816Touch::getLastTouchPosition(int& x, int& y) {
  * When x=y=0, please assume no gesture ever happened.
  */
 void CST816Touch::getLastGesture(gesture_t& gesture, int& x, int& y) {
-	if (!m_bGestureConsumed) {
-		m_bGestureConsumed = true;
+
 		x = m_iLastGestureX;
 		y = m_iLastGestureY;
 		gesture = m_eLastGesture;
-	} else {
-		gesture	= GESTURE_NONE;
-		x = 0;
-		y = 0;
-	}
+
 }
 
 bool CST816Touch::hadTouch() const {
-	return (m_iLastTouchX != 0) && (m_iLastTouchY != 0) && (!m_bTouchConsumed);
+	return (m_iLastTouchX != 0) && (m_iLastTouchY != 0);
 }
 
 bool CST816Touch::hadGesture() const {
-	return (m_eLastGesture != GESTURE_NONE) && (!m_bGestureConsumed);
+	return (m_eLastGesture != GESTURE_NONE);
 }
 
 /**
@@ -676,8 +662,7 @@ void CST816Touch::stop() {
 	memset(m_ucBuffer, 0, sizeof(m_ucBuffer));
 	memset(m_ucPreviousBuffer, 0, sizeof(m_ucPreviousBuffer));
 	m_pTouchSubscriber = 0;
-	m_bTouchConsumed = true;
-	m_bGestureConsumed = true;
+
 }
 
 /**
@@ -962,9 +947,7 @@ CST816Touch::CST816Touch() {
 	m_iLastTouchX = 0;
 	m_iLastTouchY = 0;
 	
-	
-	m_bTouchConsumed = true;
-	m_bGestureConsumed = true;
+
 	m_eOperatingMode = CST816Touch::touch_opering_mode_t::TOUCH_MODE_DEFAULT;	//set to the default from the chip itself
 	m_bNotifyReleaseOnly = true;
 	m_bNotifyMotion = false;

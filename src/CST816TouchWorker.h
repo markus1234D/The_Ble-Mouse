@@ -60,39 +60,35 @@ int x = -1;
 int y = -1;
 void CST816TouchWorker::handleTouch() {
     oTouch.control();
-	// oTouch.printBuff();
+	// oTouch.printBuf();
 
-	// /* if (oTouch.hadTouch() || oTouch.hadGesture()) */ {
-	// 	if (xprev == -1 && yprev == -1) {
-	// 		Serial.println("first touch");
-	// 	}
-	// 	CST816Touch::gesture_t eGesture = CST816Touch::GESTURE_NONE;
-	// 	oTouch.getLastGesture(eGesture, x, y);
-	// 	Serial.print("Gesture (");
-	// 	Serial.print(CST816Touch::gestureIdToString(eGesture));
-	// 	Serial.print(") received at: (");
-	// 	Serial.print(x);
-	// 	Serial.print(",");
-	// 	Serial.print(y);
-	// 	Serial.println(")");
-	// 	xprev = x;
-	// 	yprev = y;
-	// }
-	// /* else */{
-	// 	if (xprev != -1 && yprev != -1 && x == 0 && y == 0) {
-	// 		Serial.print("release at: (");
-	// 		Serial.print(xprev);
-	// 		Serial.print(",");
-	// 		Serial.print(yprev);
-	// 		Serial.println(")");
-	// 		xprev = -1;
-	// 		yprev = -1;
-	// 	}		
-	// }
-	
-	  
+	if (oTouch.hadTouch() || oTouch.hadGesture()) {
+		if (xprev == -1 && yprev == -1) {
+			Serial.println("first touch");
+		}
+		CST816Touch::gesture_t eGesture = CST816Touch::GESTURE_NONE;
+		oTouch.getLastGesture(eGesture, x, y);
+		Serial.print("Gesture (");
+		Serial.print(CST816Touch::gestureIdToString(eGesture));
+		Serial.print(") received at: (");
+		Serial.print(x);
+		Serial.print(",");
+		Serial.print(y);
+		Serial.println(")");
+		xprev = x;
+		yprev = y;
+	}
+	else{
+		if (xprev != -1 && yprev != -1 && x == 0 && y == 0) {
+			Serial.print("release at: (");
+			Serial.print(xprev);
+			Serial.print(",");
+			Serial.print(yprev);
+			Serial.println(")");
+			xprev = -1;
+			yprev = -1;
+		}		
+	}
 		// Serial.println("(" + String(xprev) + "," + String(yprev) + ")");
-
-		
 	delay(100);
 }
