@@ -125,7 +125,19 @@ void setup() {
     cst816t_touchWorker.onSwipeDown([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE DOWN");
     });
-    
+    cst816t_touchWorker.onSingleClick ([](uint16_t x, uint16_t y) {
+        Serial.println("SINGLE CLICK");
+    });
+    cst816t_touchWorker.onDoubleClick([](uint16_t x, uint16_t y) {
+        Serial.println("DOUBLE CLICK");
+    });
+    cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
+        Serial.println("LONG PRESS");
+    });
+    cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
+        Serial.println("X: " + String(x) + " Y: " + String(y));
+    });
+    cst816t_touchWorker.setMaxGestureTime(300);
 }
 
 void loop() {
