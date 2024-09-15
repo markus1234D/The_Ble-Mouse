@@ -37,6 +37,7 @@ private:
     uint16_t gestureX = 0;
     uint16_t gestureY = 0;
     unsigned long maxGestureTime = 300;
+    bool clicked = false;
 };
 
 void CST816t_TouchWorker::init() {
@@ -124,6 +125,7 @@ void CST816t_TouchWorker::handleTouch() {
                 case GESTURE_LONG_PRESS:
                     // Serial.println("LONG PRESS");
                     gesture_read = true;
+                    clicked = true;
                     if(onLongPressCallback != NULL){
                         gestureCallback = onLongPressCallback;
                         gestureX = x;
@@ -150,11 +152,33 @@ void CST816t_TouchWorker::handleTouch() {
             // Serial.println("Touch released");
             last_x = 0;
             last_y = 0;
-            if (gesture_read && !ignore_gesture){ 
-                if(gestureCallback != NULL){
-                    gestureCallback(gestureX, gestureY);
+
+            if(last_millis + maxGestureTime < millis()){
+                if(clicked){
+                    clicked = false;
+                    gesture_read = true;
+                    if(onDoubleClickCallback != NULL){
+                        gestureCallback = onDoubleClickCallback;
+                        gestureX = last_x;
+                        gestureY = last_y;
+                    }
+                } else {
+                    clicked = true;
+                    gesture_read = true;
+                    if(onSingleClickCallback != NULL){
+                        gestureCallback = onSingleClickCallback;
+                        gestureX = last_x;
+                        gestureY = last_y;
+                    }
+                }            
+            } else {
+                if (gesture_read && !ignore_gesture){ 
+                    if(gestureCallback != NULL){
+                        gestureCallback(gestureX, gestureY);
+                    }
                 }
             }
+
             ignore_gesture = false;
             gesture_read = false;
         }

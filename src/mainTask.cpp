@@ -137,7 +137,7 @@ void setup() {
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
         Serial.println("X: " + String(x) + " Y: " + String(y));
     });
-    cst816t_touchWorker.setMaxGestureTime(300);
+    cst816t_touchWorker.setMaxGestureTime(2000);
 }
 
 void loop() {
