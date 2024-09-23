@@ -4,7 +4,7 @@
 // #include "GuiWorker.h"
 // #include "TouchWorker.h"
 // #include "CST816TouchWorker.h"
-#include "CST816t_TouchWorker.h"
+#include "CST816t_TouchWorker_2.h"
 // #include "TFT_eSPI.h"
 #include "pin_config.h"
 // #include <BleMouse.h>
@@ -137,7 +137,7 @@ void setup() {
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
         Serial.println("X: " + String(x) + " Y: " + String(y));
     });
-    cst816t_touchWorker.setMaxGestureTime(2000);
+    cst816t_touchWorker.setMaxGestureTime(600);
 }
 
 void loop() {

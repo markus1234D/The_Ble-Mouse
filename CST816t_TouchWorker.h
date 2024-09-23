@@ -21,7 +21,7 @@ public:
     void setMaxGestureTime(unsigned long time) { maxGestureTime = time; }
 private:
     bool gesture_read = false;
-    bool ignore_gesture = false;
+    bool gesture_timeout = false;
     uint16_t last_x = 0;
     uint16_t last_y = 0;
     unsigned long last_millis = 0;
@@ -37,6 +37,7 @@ private:
     uint16_t gestureX = 0;
     uint16_t gestureY = 0;
     unsigned long maxGestureTime = 300;
+    unsigned long maxLongPressTime = 250;
     bool clicked = false;
 };
 
@@ -50,17 +51,19 @@ void CST816t_TouchWorker::handleTouch() {
         if(last_x == 0){
             // Serial.println("first touch");
             // TODO: onFirstTouchCallback
-            last_millis = millis();
+            if(!clicked) {
+                last_millis = millis();
+            }
         }else{
-            if(!ignore_gesture && last_millis + maxGestureTime < millis()){
+            if(!gesture_timeout && last_millis + maxGestureTime < millis()){
                 Serial.println("Gesture timeout");
-                ignore_gesture = true;
+                gesture_timeout = true;
             }
         }
         
         uint16_t x = touchpad.x;
         uint16_t y = touchpad.y;
-        if(!ignore_gesture){
+        if(!gesture_timeout){
             if(!gesture_read){
                 uint8_t gesture_id = touchpad.gesture_id;
 
@@ -104,33 +107,33 @@ void CST816t_TouchWorker::handleTouch() {
                         gestureY = y;
                     }
                     break;
-                case GESTURE_SINGLE_CLICK:
-                    // Serial.println("SINGLE CLICK");
-                    gesture_read = true;
-                    if(onSingleClickCallback != NULL){
-                        gestureCallback = onSingleClickCallback;
-                        gestureX = x;
-                        gestureY = y;
-                    }
-                    break;
-                case GESTURE_DOUBLE_CLICK:
-                    // Serial.println("DOUBLE CLICK");
-                    gesture_read = true;
-                    if(onDoubleClickCallback != NULL){
-                        gestureCallback = onDoubleClickCallback;
-                        gestureX = x;
-                        gestureY = y;
-                    }
-                    break;
-                case GESTURE_LONG_PRESS:
-                    // Serial.println("LONG PRESS");
-                    gesture_read = true;
-                    clicked = true;
-                    if(onLongPressCallback != NULL){
-                        gestureCallback = onLongPressCallback;
-                        gestureX = x;
-                        gestureY = y;
-                    }
+                // case GESTURE_SINGLE_CLICK:
+                //     // Serial.println("SINGLE CLICK");
+                //     gesture_read = true;
+                //     if(onSingleClickCallback != NULL){
+                //         gestureCallback = onSingleClickCallback;
+                //         gestureX = x;
+                //         gestureY = y;
+                //     }
+                //     break;
+                // case GESTURE_DOUBLE_CLICK:
+                //     // Serial.println("DOUBLE CLICK");
+                //     gesture_read = true;
+                //     if(onDoubleClickCallback != NULL){
+                //         gestureCallback = onDoubleClickCallback;
+                //         gestureX = x;
+                //         gestureY = y;
+                //     }
+                //     break;
+                // case GESTURE_LONG_PRESS:
+                //     // Serial.println("LONG PRESS");
+                //     gesture_read = true;
+                //     clicked = true;
+                //     if(onLongPressCallback != NULL){
+                //         gestureCallback = onLongPressCallback;
+                //         gestureX = x;
+                //         gestureY = y;
+                //     }
                     break;
                 default:
                     Serial.println("?");
@@ -140,6 +143,7 @@ void CST816t_TouchWorker::handleTouch() {
             }    // end if(!gesture_read)
         } // end if(!ignore_gesture)   // after timeout
         else{
+            // after timeoout
             // Serial.println("X: " + String(x) + " Y: " + String(y));
             if(noGestureCallback != NULL){
                 noGestureCallback(x, y);
@@ -147,13 +151,38 @@ void CST816t_TouchWorker::handleTouch() {
         }
         last_x = touchpad.x;
         last_y = touchpad.y;
-    } else {
+    } else { // end if(touchpad.available())
         if(last_x != 0 && last_y != 0){
             // Serial.println("Touch released");
             last_x = 0;
             last_y = 0;
 
             if(last_millis + maxGestureTime < millis()){
+                // before timeout
+                if (!gesture_read){
+                    // should be click or double click or long press
+                    if(last_millis + maxLongPressTime < millis()){
+                        // long press
+                        if(!clicked && onLongPressCallback != NULL){
+                            gestureCallback = onLongPressCallback;
+                            gestureX = last_x;
+                            gestureY = last_y;
+                        }
+                    } else {
+                        // click or double click
+                        if(clicked){
+                            clicked = false;
+                            gesture_read = true;
+                            if(onDoubleClickCallback != NULL){
+                                gestureCallback = onDoubleClickCallback;
+                                gestureX = last_x;
+                                gestureY = last_y;
+                            }
+                        }          
+                    }
+
+                }
+
                 if(clicked){
                     clicked = false;
                     gesture_read = true;
@@ -172,14 +201,15 @@ void CST816t_TouchWorker::handleTouch() {
                     }
                 }            
             } else {
-                if (gesture_read && !ignore_gesture){ 
+                // after timeout
+                if (gesture_read && !gesture_timeout){ 
                     if(gestureCallback != NULL){
                         gestureCallback(gestureX, gestureY);
                     }
                 }
             }
 
-            ignore_gesture = false;
+            gesture_timeout = false;
             gesture_read = false;
         }
     }
