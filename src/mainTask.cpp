@@ -3,11 +3,11 @@
 // #include "DisplayWorker.h"
 // #include "GuiWorker.h"
 // #include "TouchWorker.h"
-// #include "CST816TouchWorker.h"
-#include "CST816t_TouchWorker_2.h"
+#include "CST816t_TouchWorker.h"
+#include "MouseWorker.h"
 // #include "TFT_eSPI.h"
 #include "pin_config.h"
-// #include <BleMouse.h>
+
 #include <Wire.h>
 
 // bool checkGesture(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx);
@@ -22,6 +22,7 @@
 // TwoWire Wire2(PIN_IIC_SDA, PIN_IIC_SCL);
 // cst816t touchpad(Wire, PIN_TOUCH_RES, PIN_TOUCH_INT);
 CST816t_TouchWorker cst816t_touchWorker;
+MouseWorker mouseWorker;
 
 
 int posModulo(int num, int mod){
@@ -108,13 +109,16 @@ void setup() {
     // displayWorker.init();
     // guiWorker.init();
     // touchWorker.init();
+    mouseWorker.init();
+    cst816t_touchWorker.init();
 
     // touchWorker.onPress(&joystickMousePressFunc);
     // touchWorker.onRelease(&joystickMouseReleaseFunc);
     // touchWorker.onMove(&mouseMoveFunc);
-    cst816t_touchWorker.init();
+
     cst816t_touchWorker.onSwipeLeft([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE LEFT");
+        mouseWorker.nextMode();
     });
     cst816t_touchWorker.onSwipeRight([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE RIGHT");
@@ -135,9 +139,11 @@ void setup() {
         Serial.println("LONG PRESS");
     });
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
-        Serial.println("X: " + String(x) + " Y: " + String(y));
+        // Serial.println("X: " + String(x) + " Y: " + String(y));
+        mouseWorker.move(x, y);
     });
-    cst816t_touchWorker.setMaxGestureTime(600);
+
+    cst816t_touchWorker.setMaxGestureTime(300);
 }
 
 void loop() {
