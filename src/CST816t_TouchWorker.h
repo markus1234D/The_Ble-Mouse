@@ -5,22 +5,25 @@
 
 class CST816t_TouchWorker {
     typedef void (*functionPointer)(uint16_t x, uint16_t y);
+
 public:
     void init();
     void handleTouch();
     cst816t touchpad = cst816t(Wire, PIN_TOUCH_RES, PIN_TOUCH_INT); //begin of Wire is in Libra
-    void onPress(functionPointer callback) { onSingleClickCallback = callback; }
+
     void onSwipeLeft(functionPointer callback) { onSwipeLeftCallback = callback; }
     void onSwipeRight(functionPointer callback) { onSwipeRightCallback = callback; }
     void onSwipeUp(functionPointer callback) { onSwipeUpCallback = callback; }
     void onSwipeDown(functionPointer callback) { onSwipeDownCallback = callback; }
     void onSingleClick(functionPointer callback) { onSingleClickCallback = callback; }
-    void onsinglClickRelease(functionPointer callback) { onSingleClickCallback = callback; }
+    void onSingleClickRelease(functionPointer callback) { onSingleClickReleaseCallback = callback; }
     void onDoubleClick(functionPointer callback) { onDoubleClickCallback = callback; }
-    void onDoubleClickRelease(functionPointer callback) { onSingleClickCallback = callback; }
+    void onDoubleClickRelease(functionPointer callback) { onDoubleClickReleaseCallback = callback; }
     void onLongPress(functionPointer callback) { onLongPressCallback = callback; }
+    void onLongPressRelease(functionPointer callback) { onLongPressReleaseCallback = callback; }
     void onNoGesture(functionPointer callback) { noGestureCallback = callback; }
     void setMaxGestureTime(unsigned long time) { maxGestureTime = time; }
+
 private:
     bool swipe_read = false;
     bool gesture_timeout = false;
@@ -32,13 +35,19 @@ private:
     uint16_t last_x = 0;
     uint16_t last_y = 0;
     unsigned long last_millis = 0;
+
+    functionPointer onPressCallback = NULL;
+    functionPointer onReleaseCallback = NULL;
     functionPointer onSingleClickCallback = NULL;
+    functionPointer onSingleClickReleaseCallback = NULL;
+    functionPointer onDoubleClickCallback = NULL;
+    functionPointer onDoubleClickReleaseCallback = NULL;
+    functionPointer onLongPressCallback = NULL;
+    functionPointer onLongPressReleaseCallback = NULL;
     functionPointer onSwipeLeftCallback = NULL;
     functionPointer onSwipeRightCallback = NULL;
     functionPointer onSwipeUpCallback = NULL;
     functionPointer onSwipeDownCallback = NULL;
-    functionPointer onDoubleClickCallback = NULL;
-    functionPointer onLongPressCallback = NULL;
     functionPointer noGestureCallback = NULL;
     functionPointer gestureCallback = NULL;
     uint16_t gestureX = 0;
@@ -82,13 +91,20 @@ void CST816t_TouchWorker::handleTouch() {
     if(touchpad.available()){
         // Serial.println("touch detected");
         if (last_x == 0) {
-            if (!clicked) {
+            if (clicked) {
+                if (onDoubleClickCallback != NULL){
+                    onDoubleClickCallback(touchpad.x, touchpad.y);
+                }
+            } else {
                 // Serial.println("first touch");
                 last_millis = millis();
                 start = true;
                 gesture_timeout = false;
                 swipe_read = false;
                 movemnet = false;
+                if (onSingleClickCallback != NULL){
+                    onSingleClickCallback(touchpad.x, touchpad.y);
+                }
             }
         } else {
             // not first touch/or move
@@ -99,6 +115,7 @@ void CST816t_TouchWorker::handleTouch() {
 
         if (gesture_timeout) {
             // no gesture
+            gestureCallback = NULL;
             if(noGestureCallback != NULL){
                 noGestureCallback(touchpad.x, touchpad.y);
             }
@@ -143,6 +160,7 @@ void CST816t_TouchWorker::handleTouch() {
         // Serial.println("no touch");
         if (last_x != 0) {
             // release
+
             if (gesture_timeout){
                 // too late for gesture
             } else {              
@@ -162,8 +180,8 @@ void CST816t_TouchWorker::handleTouch() {
                         // no movement
                         if (clicked) {
                             // double click release
-                            if (onDoubleClickCallback != NULL){
-                                gestureCallback = onDoubleClickCallback;
+                            if (onDoubleClickReleaseCallback != NULL){
+                                gestureCallback = onDoubleClickReleaseCallback;
                                 gestureX = last_x;
                                 gestureY = last_y;
                                 // clicked = false;
@@ -172,12 +190,16 @@ void CST816t_TouchWorker::handleTouch() {
                         } else {
                             // click release
                             clicked = true;
-                            if (onSingleClickCallback != NULL){
-                                gestureCallback = onSingleClickCallback;
+                            if (onSingleClickReleaseCallback != NULL){
+                                gestureCallback = onSingleClickReleaseCallback;
                                 gestureX = last_x;
                                 gestureY = last_y;
                                 start = true;
                             }
+                        }
+                        if (gestureCallback != NULL){
+                            gestureCallback(gestureX, gestureY);
+                            gestureCallback = NULL;
                         }
                     }
                 }

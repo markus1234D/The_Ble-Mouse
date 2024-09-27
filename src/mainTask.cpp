@@ -9,10 +9,14 @@
 #include "pin_config.h"
 
 #include <Wire.h>
+// #include <BleMouse.h>
+// #include <BleKeyboard.h>
+#include "BleCombo.h"
+
 
 // bool checkGesture(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx);
 
-// BleMouse bleMouse;
+// BleMouse Mouse;
 
 // CommunicationWorker communicationWorker;
 // DisplayWorker displayWorker;
@@ -23,7 +27,7 @@
 // cst816t touchpad(Wire, PIN_TOUCH_RES, PIN_TOUCH_INT);
 CST816t_TouchWorker cst816t_touchWorker;
 MouseWorker mouseWorker;
-
+// BleKeyboard bleKeyboard;
 
 int posModulo(int num, int mod){
     int rest = (num) % mod;
@@ -47,7 +51,7 @@ int posModulo(int num, int mod){
 //         // Serial.println("currIdx: " + String(currentIdx) + " x: " + String(array[currentIdx].x) + " y: " + String(array[currentIdx].y));
 //         int xDiff = array[currentIdx].x-array[prevIdx].x;
 //         int yDiff = array[currentIdx].y-array[prevIdx].y;
-//         bleMouse.move(xDiff, yDiff, 0);
+//         Mouse.move(xDiff, yDiff, 0);
 //         // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
 //     }
 // }
@@ -67,7 +71,7 @@ int posModulo(int num, int mod){
 //     int yDiff = array[currentIdx].y-yCenter;
 //     if (xDiff < 5){ xDiff = 0; }
 //     if (yDiff < 5){ yDiff = 0; }
-//     bleMouse.move(xDiff, yDiff, 0);
+//     Mouse.move(xDiff, yDiff, 0);
 // }
 
 // int swipeThreshold = 20;
@@ -100,17 +104,19 @@ int posModulo(int num, int mod){
 // }
 
 void setup() {
-    // bleMouse.begin();
+    // Mouse.begin();
     Serial.begin(115200);
     delay(4000);
     Serial.println("Hello World");
-    
+    // bleKeyboard.begin();
     // communicationWorker.init();
     // displayWorker.init();
     // guiWorker.init();
     // touchWorker.init();
     mouseWorker.init();
     cst816t_touchWorker.init();
+
+    Keyboard.begin();
 
     // touchWorker.onPress(&joystickMousePressFunc);
     // touchWorker.onRelease(&joystickMouseReleaseFunc);
@@ -122,27 +128,49 @@ void setup() {
     });
     cst816t_touchWorker.onSwipeRight([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE RIGHT");
+        Mouse.click(MOUSE_RIGHT);
     });
     cst816t_touchWorker.onSwipeUp([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE UP");
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.print("c");
+        delay(100);
+        Keyboard.releaseAll();
     });
     cst816t_touchWorker.onSwipeDown([](uint16_t x, uint16_t y) {
         Serial.println("SWIPE DOWN");
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.print("v");
+        delay(100);
+        Keyboard.releaseAll();
     });
     cst816t_touchWorker.onSingleClick ([](uint16_t x, uint16_t y) {
         Serial.println("SINGLE CLICK");
+        mouseWorker.press((int)x, (int)y);
+    });
+    cst816t_touchWorker.onSingleClickRelease([](uint16_t x, uint16_t y) {
+        Serial.println("SINGLE CLICK RELEASE");
+        mouseWorker.release();
+        Mouse.click();
     });
     cst816t_touchWorker.onDoubleClick([](uint16_t x, uint16_t y) {
         Serial.println("DOUBLE CLICK");
+        mouseWorker.press((int)x, (int)y);
+        Mouse.click();
     });
-    cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
-        Serial.println("LONG PRESS");
+    cst816t_touchWorker.onDoubleClickRelease([](uint16_t x, uint16_t y) {
+        Serial.println("DOUBLE CLICK RELEASE");
+        mouseWorker.release();
     });
+    // cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
+    //     Serial.println("LONG PRESS");
+    // });
+    // cst816t_touchWorker.onLongPressRelease([](uint16_t x, uint16_t y) {
+    //     Serial.println("LONG PRESS RELEASE");
+    // });
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
-        // Serial.println("X: " + String(x) + " Y: " + String(y));
-        mouseWorker.move(x, y);
+        mouseWorker.move((int)x, (int)y);
     });
-
     cst816t_touchWorker.setMaxGestureTime(300);
 }
 
