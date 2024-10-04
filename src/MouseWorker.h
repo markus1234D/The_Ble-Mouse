@@ -22,7 +22,6 @@ public:
     void setScrollSpeed(int speed) { scrollSpeed = speed; }
     // BleMouse Mouse;  
 
-
 private:
     int scrollSpeed = 6;
     int xCenter = -1;
@@ -60,7 +59,7 @@ void MouseWorker::move(int x, int y) {
             if (last_x != -1 && last_y != -1) {
                 xDiff = x - last_x;
                 yDiff = y - last_y;
-                Mouse.move(2*xDiff, 2*yDiff, 0);
+                Mouse.move(xDiff, yDiff, 0);
             }
             last_x = x;
             last_y = y;
@@ -83,7 +82,7 @@ void MouseWorker::move(int x, int y) {
                 Mouse.move(0, 0, yDiff/10, xDiff/5);
             }
         }
-        Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
+        // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
     }
 }
 
@@ -106,43 +105,6 @@ void MouseWorker::release() {
     last_x = -1;
     last_y = -1;
 }
-
-// void mouseMoveFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//     // checkGesture(array, currentIdx);
-
-//     if(array[currentIdx].x != -1) {
-//         int prevIdx = posModulo(currentIdx-1, TOUCH_ARRAY_SIZE);
-
-//         int x = array[currentIdx].x;
-//         int y = array[currentIdx].y;
-//         int xPrev = array[prevIdx].x;
-//         int yPrev = array[prevIdx].y;
-//         // Serial.println("prevIdx: " + String(prevIdx) + " xPrev: " + String(xPrev) + " yPrev: " + String(yPrev));
-//         // Serial.println("currIdx: " + String(currentIdx) + " x: " + String(array[currentIdx].x) + " y: " + String(array[currentIdx].y));
-//         int xDiff = array[currentIdx].x-array[prevIdx].x;
-//         int yDiff = array[currentIdx].y-array[prevIdx].y;
-//         bleMouse.move(xDiff, yDiff, 0);
-//         // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
-//     }
-// }
-
-// int xCenter = -1;
-// int yCenter = -1;
-// void joystickMousePressFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//         xCenter = array[currentIdx].x;
-//         yCenter = array[currentIdx].y;
-// }
-// void joystickMouseReleaseFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//         xCenter = -1;
-//         yCenter = -1;
-// }
-// void joystickMouseMoveFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//     int xDiff = array[currentIdx].x-xCenter;
-//     int yDiff = array[currentIdx].y-yCenter;
-//     if (xDiff < 5){ xDiff = 0; }
-//     if (yDiff < 5){ yDiff = 0; }
-//     bleMouse.move(xDiff, yDiff, 0);
-// }
 
 #endif // MOUSEWORKER_H
 

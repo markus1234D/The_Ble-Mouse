@@ -37,84 +37,19 @@ int posModulo(int num, int mod){
     return rest;
 }
 
-// void mouseMoveFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//     // checkGesture(array, currentIdx);
-
-//     if(array[currentIdx].x != -1) {
-//         int prevIdx = posModulo(currentIdx-1, TOUCH_ARRAY_SIZE);
-
-//         int x = array[currentIdx].x;
-//         int y = array[currentIdx].y;
-//         int xPrev = array[prevIdx].x;
-//         int yPrev = array[prevIdx].y;
-//         // Serial.println("prevIdx: " + String(prevIdx) + " xPrev: " + String(xPrev) + " yPrev: " + String(yPrev));
-//         // Serial.println("currIdx: " + String(currentIdx) + " x: " + String(array[currentIdx].x) + " y: " + String(array[currentIdx].y));
-//         int xDiff = array[currentIdx].x-array[prevIdx].x;
-//         int yDiff = array[currentIdx].y-array[prevIdx].y;
-//         Mouse.move(xDiff, yDiff, 0);
-//         // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
-//     }
-// }
-
-// int xCenter = -1;
-// int yCenter = -1;
-// void joystickMousePressFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//         xCenter = array[currentIdx].x;
-//         yCenter = array[currentIdx].y;
-// }
-// void joystickMouseReleaseFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//         xCenter = -1;
-//         yCenter = -1;
-// }
-// void joystickMouseMoveFunc(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//     int xDiff = array[currentIdx].x-xCenter;
-//     int yDiff = array[currentIdx].y-yCenter;
-//     if (xDiff < 5){ xDiff = 0; }
-//     if (yDiff < 5){ yDiff = 0; }
-//     Mouse.move(xDiff, yDiff, 0);
-// }
-
-// int swipeThreshold = 20;
-// bool checkGesture(Data (&touchDataArr)[TOUCH_ARRAY_SIZE], int currentIdx) {
-//     // swipe left
-//     if (touchDataArr[currentIdx].x - touchDataArr[posModulo(currentIdx-1, TOUCH_ARRAY_SIZE)].x < -swipeThreshold) {
-//         Serial.println("Swipe left");
-//         return true;
-//     }
-//     // swipe right
-//     if (touchDataArr[currentIdx].x - touchDataArr[posModulo(currentIdx-1, TOUCH_ARRAY_SIZE)].x > swipeThreshold) {
-//         Serial.println("Swipe right");
-//         return true;
-//     }
-//     // long press
-//     int x = touchDataArr[currentIdx].x;
-//     int y = touchDataArr[currentIdx].y;
-//     int xPrev = touchDataArr[posModulo(currentIdx-1, TOUCH_ARRAY_SIZE)].x;
-//     int xPrev2 = touchDataArr[posModulo(currentIdx-2, TOUCH_ARRAY_SIZE)].x;
-//     int yPrev = touchDataArr[posModulo(currentIdx-1, TOUCH_ARRAY_SIZE)].y;
-//     int yPrev2 = touchDataArr[posModulo(currentIdx-2, TOUCH_ARRAY_SIZE)].y;
-//     if (xPrev < 0 || xPrev2 < 0 || yPrev < 0 || yPrev2 < 0) {
-//         return false;
-//     }
-//     int longPressThreshold = 5;
-//     if(abs(x - xPrev) < longPressThreshold && abs(xPrev - xPrev2) < longPressThreshold && abs(y - yPrev) < longPressThreshold && abs(yPrev - yPrev2) < longPressThreshold) {
-//         Serial.println("Long press");
-//         return true;
-//     }
-// }
-
 void setup() {
     // Mouse.begin();
     Serial.begin(115200);
     delay(4000);
     Serial.println("Hello World");
-    // bleKeyboard.begin();
     // communicationWorker.init();
     // displayWorker.init();
     // guiWorker.init();
     // touchWorker.init();
     mouseWorker.init();
     cst816t_touchWorker.init();
+    cst816t_touchWorker.setMaxGestureTime(300);
+    cst816t_touchWorker.setRotation(CST816t_TouchWorker::USB_UP);
 
     Keyboard.begin();
 
@@ -162,16 +97,18 @@ void setup() {
         Serial.println("DOUBLE CLICK RELEASE");
         mouseWorker.release();
     });
-    // cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
-    //     Serial.println("LONG PRESS");
-    // });
-    // cst816t_touchWorker.onLongPressRelease([](uint16_t x, uint16_t y) {
-    //     Serial.println("LONG PRESS RELEASE");
-    // });
+    cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
+        // Serial.println("LONG PRESS");
+        Mouse.press(MOUSE_LEFT);
+    });
+    cst816t_touchWorker.onLongPressRelease([](uint16_t x, uint16_t y) {
+        Serial.println("LONG PRESS RELEASE; X:" + String(x) + " Y:" + String(y));
+        Mouse.release(MOUSE_LEFT);
+    });
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
+        Serial.println("X:" + String(x) + " Y:" + String(y));
         mouseWorker.move((int)x, (int)y);
     });
-    cst816t_touchWorker.setMaxGestureTime(300);
 }
 
 void loop() {
