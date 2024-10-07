@@ -49,7 +49,7 @@ void setup() {
     mouseWorker.init();
     cst816t_touchWorker.init();
     cst816t_touchWorker.setMaxGestureTime(300);
-    cst816t_touchWorker.setRotation(CST816t_TouchWorker::USB_UP);
+    cst816t_touchWorker.setRotation(CST816t_TouchWorker::USB_LEFT);
 
     Keyboard.begin();
 

@@ -46,9 +46,13 @@ private:
     uint16_t last_y = 0;
     unsigned long last_millis = 0;
     uint16_t xMin = 0;
-    uint16_t xMax = 320;
+    uint16_t xMax = 170;
     uint16_t yMin = 0;
-    uint16_t yMax = 170;
+    uint16_t yMax = 320;
+    uint16_t real_xMin = 7;
+    uint16_t real_xMax = 154;
+    uint16_t real_yMin = 7;
+    uint16_t real_yMax = 312;
 
     functionPointer onPressCallback = NULL;
     functionPointer onReleaseCallback = NULL;
@@ -74,26 +78,22 @@ private:
 };
 
 void CST816t_TouchWorker::setXY(uint16_t x, uint16_t y) {
-    uint16_t xMin = 0;
-    uint16_t xMax = 320;
-    uint16_t yMin = 0;
-    uint16_t yMax = 170;
     switch (rotation) {
     case USB_UP:
-        this->x = x;
-        this->y = y;
-        break;
-    case USB_DOWN:
         this->x = xMax - x;
         this->y = yMax - y;
         break;
-    case USB_LEFT:
-        this->x = y;
-        this->y = xMax - x;
+    case USB_DOWN:
+        this->x = x;
+        this->y = y;
         break;
-    case USB_RIGHT:
+    case USB_LEFT:
         this->x = yMax - y;
         this->y = x;
+        break;
+    case USB_RIGHT:
+        this->x = y;
+        this->y = xMax - x;
         break;
     default:
         Serial.println("Unknown rotation");
@@ -255,37 +255,151 @@ void CST816t_TouchWorker::checkGesture(){
     case GESTURE_SWIPE_DOWN:
         // Serial.println("SWIPE DOWN");
         swipe_read = true;
-        if(onSwipeUpCallback != NULL){
-            gestureCallback = onSwipeUpCallback;
-            gestureX = this->x;
-            gestureY = this->y;
+
+        switch (rotation)
+        {
+        case USB_DOWN :
+            if(onSwipeUpCallback != NULL){
+                gestureCallback = onSwipeUpCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_UP :
+            if(onSwipeDownCallback != NULL){
+                gestureCallback = onSwipeDownCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_LEFT:
+            if(onSwipeRightCallback != NULL){
+                gestureCallback = onSwipeRightCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_RIGHT:
+            if(onSwipeLeftCallback != NULL){
+                gestureCallback = onSwipeLeftCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        default:
+            break;
         }
         break;
     case GESTURE_SWIPE_UP:
         // Serial.println("SWIPE UP");
         swipe_read = true;
-        if(onSwipeDownCallback != NULL){
-            gestureCallback = onSwipeDownCallback;
-            gestureX = this->x;
-            gestureY = this->y;
+        switch (rotation)
+        {
+        case USB_DOWN :
+            if(onSwipeUpCallback != NULL){
+                gestureCallback = onSwipeUpCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_UP :
+            if(onSwipeDownCallback != NULL){
+                gestureCallback = onSwipeDownCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_LEFT:
+            if(onSwipeLeftCallback != NULL){
+                gestureCallback = onSwipeLeftCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_RIGHT:
+            if(onSwipeRightCallback != NULL){
+                gestureCallback = onSwipeRightCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        default:
+            break;
         }
         break;
     case GESTURE_SWIPE_LEFT:             
         // Serial.println("SWIPE LEFT");
         swipe_read = true;
-        if(onSwipeLeftCallback != NULL){
-            gestureCallback = onSwipeLeftCallback;
-            gestureX = this->x;
-            gestureY = this->y;
+        switch (rotation)
+        {
+        case USB_DOWN :
+            if(onSwipeLeftCallback != NULL){
+                gestureCallback = onSwipeLeftCallback;
+
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_UP :
+            if(onSwipeRightCallback != NULL){
+                gestureCallback = onSwipeRightCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_LEFT:
+            if(onSwipeUpCallback != NULL){
+                gestureCallback = onSwipeUpCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_RIGHT:
+            if(onSwipeDownCallback != NULL){
+                gestureCallback = onSwipeDownCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        default:
+            break;
         }
         break;
     case GESTURE_SWIPE_RIGHT:
         // Serial.println("SWIPE RIGHT");
         swipe_read = true;
+        switch (rotation)
+        {
+        case USB_DOWN :
         if(onSwipeRightCallback != NULL){
             gestureCallback = onSwipeRightCallback;
             gestureX = this->x;
             gestureY = this->y;
+            }
+            break;
+        case USB_UP :
+            if(onSwipeLeftCallback != NULL){
+                gestureCallback = onSwipeLeftCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_LEFT:
+            if(onSwipeDownCallback != NULL){
+                gestureCallback = onSwipeDownCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        case USB_RIGHT:
+            if(onSwipeUpCallback != NULL){
+                gestureCallback = onSwipeUpCallback;
+                gestureX = this->x;
+                gestureY = this->y;
+            }
+            break;
+        default:
+            break;
         }
         break;
     case GESTURE_LONG_PRESS:
