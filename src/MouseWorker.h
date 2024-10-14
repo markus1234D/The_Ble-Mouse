@@ -20,10 +20,12 @@ public:
     void press(int x, int y);
     void release();
     void setScrollSpeed(int speed) { scrollSpeed = speed; }
+    void setMouseSpeed(int speed) { mouseSpeed = speed; }
     // BleMouse Mouse;  
 
 private:
     int scrollSpeed = 6;
+    int mouseSpeed = 1;
     int xCenter = -1;
     int yCenter = -1;
     int last_x = -1;
@@ -54,7 +56,7 @@ void MouseWorker::nextMode() {
 
 void MouseWorker::move(int x, int y) {
     ticks++;
-    if (ticks % scrollSpeed == 0) {
+    if (ticks % mouseSpeed == 0) {
         if (Mode == MOUSE_MODE) {
             if (last_x != -1 && last_y != -1) {
                 xDiff = x - last_x;
@@ -74,12 +76,14 @@ void MouseWorker::move(int x, int y) {
             }
         }
         else if(Mode == SCROLL_MODE) {
-            if (last_x != -1 && last_y != -1) {
-                xDiff = x - xCenter;
-                yDiff = y - yCenter;
-                if (abs(xDiff) < 5){ xDiff = 0; }
-                if (abs(yDiff) < 5){ yDiff = 0; }
-                Mouse.move(0, 0, yDiff/10, xDiff/5);
+            if(ticks % scrollSpeed == 0) {
+                if (last_x != -1 && last_y != -1) {
+                    xDiff = x - xCenter;
+                    yDiff = y - yCenter;
+                    if (abs(xDiff) < 5){ xDiff = 0; }
+                    if (abs(yDiff) < 5){ yDiff = 0; }
+                    Mouse.move(0, 0, yDiff/10, xDiff/10);
+                }
             }
         }
         // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));

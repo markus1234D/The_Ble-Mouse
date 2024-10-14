@@ -1,122 +1,49 @@
 #include <Arduino.h>
-#include "WiFi.h"
-#include <WebServer.h>
-#include <WebSocketsServer.h>
 #include <vector>
 
+class GuiWorker {
 
-class CommunicationWorker {
+    typedef void (*valChangeFunc)(int attribute);   
+
 public:
     // Constructor
-    CommunicationWorker();
-
-    // Destructor
-    // ~CommunicationWorker();
-    
-    // Public member variables
-    // const char* ssid = "FRITZ!Mox";
-    // const char* password = "BugolEiz42";
-    const char *ssid = "SM-Fritz";
-    const char *password = "47434951325606561069";
-    // const char* ssid = "ZenFone7 Pro_6535";
-    // const char* password = "e24500606";
-
-
-    // Public member functions
+    // GuiWorker();
     void init();
-    void initWiFi();
-    IPAddress getIP();
-    void sendMessageToWeb(String message);
-    void fetchMessageFromWeb();
-    void handleRoot();  //TODO: { guiWorker.getHtml(); }
-    static int extractArgs(const String& input, std::vector<String>& argNames, std::vector<String>& args);
-    static String extractCommand(const String& input);
-    void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
-    void handleCommunication();
+    void handleGui();
+    String getHtml();
+    String getName();
+    void sendXY(int x, int y);
+    void onMoseSpeedChange(valChangeFunc func) {onMoseSpeedChangeCallback = func;}
+    void onScrollspeedChange(valChangeFunc func);
+    void onBrightnessChange(valChangeFunc func);
+    int getXMin();
+    int getXMax();
+    int getYMin();
+    int getYMax();
 
-    WebServer server;
-    WebSocketsServer webSocketServer;
+
 private:
     // Private member variables
-    IPAddress ip;
+    String html;
+    String name;
+    void (*callback)(void);
+    int xMin;
+    int xMax;
+    int yMin;
+    int yMax;
 
-    // Private member functions
+    valChangeFunc onMoseSpeedChangeCallback = NULL;
+    valChangeFunc onScrollspeedChangeCallback = NULL;
+    valChangeFunc onBrightnessChangeCallback = NULL;
 };
 
-CommunicationWorker::CommunicationWorker() : server(80), webSocketServer(81) {      // initializer list
-    // Constructor
-    Serial.println("CommunicationWorker constructor called");
 
+void GuiWorker::init() {
+    
 }
 
-void CommunicationWorker::init() {
-
-    initWiFi();
-    server.on("/", HTTP_GET, [this]() { handleRoot(); });
-    server.begin();
-    webSocketServer.begin();
-    webSocketServer.onEvent([this](uint8_t num, WStype_t type, uint8_t *payload, size_t length) { 
-            webSocketEvent(num, type, payload, length); 
-        });   // lambda function to call webSocketEvent
-}
-
-void CommunicationWorker::initWiFi() {
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.println("Connecting to WiFi..");
-    }
-    ip = WiFi.localIP();
-    Serial.println("Connected to WiFi");
-    Serial.println(ip);
-}
-
-String CommunicationWorker::extractCommand(const String& input) {
-    int pos = input.indexOf('?');
-    if (pos != -1) {
-        return input.substring(0, pos);
-    } else {
-        return input; // Wenn kein '?' gefunden wird, ist der ganze String der Command
-    }
-}
-
-// Funktion, um die Argumentnamen und -werte zu extrahieren
-int CommunicationWorker::extractArgs(const String& input, std::vector<String>& argNames, std::vector<String>& args) {
-    int pos = input.indexOf('?');
-    if (pos == -1) return 0; // Falls kein '?' vorhanden ist, keine Argumente
-
-    String query = input.substring(pos + 1);
-    int start = 0;
-    int end;
-    int len = 0;
-
-    while ((end = query.indexOf('&', start)) != -1) {
-        String pair = query.substring(start, end);
-        int equalPos = pair.indexOf('=');
-
-        if (equalPos != -1) {
-            len++;
-            argNames.push_back(pair.substring(0, equalPos));
-            args.push_back(pair.substring(equalPos + 1));
-        }
-
-        start = end + 1;
-    }
-
-    // Letztes Paar verarbeiten (nach dem letzten '&')
-    String pair = query.substring(start);
-    int equalPos = pair.indexOf('=');
-
-    if (equalPos != -1) {
-        len++;
-        argNames.push_back(pair.substring(0, equalPos));
-        args.push_back(pair.substring(equalPos + 1));
-    }
-    return len;
-}
-
-void CommunicationWorker::handleRoot() {
-    String html = R"rawliteral(
+String GuiWorker::getHtml() {
+    return R"rawliteral(
     
 <!DOCTYPE html>
 <html lang="de">
@@ -306,54 +233,5 @@ void CommunicationWorker::handleRoot() {
 
 
 )rawliteral";
-    server.send(200, "text/html", html);
-}
 
-void CommunicationWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-    switch (type) {
-    case WStype_DISCONNECTED:
-        Serial.printf("[%u] Disconnected!\n", num);
-        break;
-    case WStype_CONNECTED:
-        Serial.printf("[%u] Connected!\n", num);
-        webSocketServer.sendTXT(num, "Hello from ESP32!");
-        break;
-    case WStype_TEXT:
-        Serial.printf("[%u] Received text: %s\n", num, payload);
-        String receivedMessage = String((char*)payload);
-        // String response = "ESP32 received: " + receivedMessage;
-        // webSocketServer.sendTXT(num, receivedMessage.c_str());
-
-        std::vector<String> argNames;
-        std::vector<String> args;
-        String command = extractCommand(receivedMessage);
-        Serial.println("Command: " + command);
-        int numArgs = extractArgs(receivedMessage, argNames, args);
-        for (int i = 0; i < numArgs; i++) {
-            Serial.println("Arg " + argNames[i] + ": " + args[i]);
-        }
-        if(command == "/coord"){
-            if(numArgs == 2){
-                Serial.println("Received /coord");
-                int x = args[0].toInt();
-                int y = 320-args[1].toInt();                // todo evtl.: 320-y
-                // tft.fillCircle(y, x, 3, TFT_RED);
-            }
-        }
-        else if(command == "clear"){
-            // tft.fillScreen(TFT_BLACK);
-        }
-        else if(command == "brightness"){
-            if(numArgs == 1){
-                int brightness = args[0].toInt();
-                Serial.println("Brightness: " + brightness);
-                // analogWrite(PIN_LCD_BL, brightness);
-            }
-        }
-    }
-}
-
-void CommunicationWorker::handleCommunication() {
-    server.handleClient();
-    webSocketServer.loop();
 }

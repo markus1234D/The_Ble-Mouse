@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Panel</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            border: 2px solid #d2e2f2;
+            padding: 20px;
+            width: 80%;
+            margin: 0 auto;
+            background-color: #282828;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .left-column, .right-column {
+            width: 40%;
+        }
+
+        .output {
+            width: 100%;
+            height: 100px;
+            color: rgb(255, 255, 255);
+            background-color: #1a1a1a;
+            border: 2px solid #7cb8ff;
+            padding: 10px;
+            resize: none;
+        }
+
+        .label {
+            margin-bottom: 5px;
+            display: block;
+            color: white;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #7cb8ff;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #7cb8ff;
+            cursor: pointer;
+        }
+
+        .slider-container span {
+            width: 120px;
+            color: white;
+        }
+
+        .screen-rotation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .screen-diagram {
+            width: 170px;
+            height: 360px;
+            border: 2px solid #7cb8ff;
+            position: relative;
+            transition: transform 0.5s;
+        }
+
+        .screen-diagram.up {
+            transform: rotate(0deg);
+        }
+
+        .screen-diagram.down {
+            transform: rotate(180deg);
+        }
+
+        .screen-diagram.left {
+            transform: rotate(270deg);
+        }
+
+        .screen-diagram.right {
+            transform: rotate(90deg);
+        }
+
+        .circle {
+            width: 15px;
+            height: 15px;
+            background-color: #7cb8ff;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            left: calc(50% - 7.5px);
+        }
+        
+        .point {
+            width: 10px;
+            height: 10px;
+            background-color: magenta;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="left-column">
+            <textarea class="output" readonly>Text\nText\n...</textarea>
+
+            <label for="mode" class="label">Mode</label>
+            <select id="mode">
+                <option value="Mouse_Mode">Mouse_Mode</option>
+                <option value="Joystick_Mode">Joystick_Mode</option>
+                <option value="Scroll_Mode">Scroll_Mode</option>
+            </select>
+
+            <div class="slider-container">
+                <span>Mousespeed</span>
+                <input type="range" class="slider" id="mousespeed" min="1" max="100">
+            </div>
+
+            <div class="slider-container">
+                <span>Scrollspeed</span>
+                <input type="range" class="slider" id="scrollspeed" min="1" max="100">
+            </div>
+
+            <div class="slider-container">
+                <span>Brightness</span>
+                <input type="range" class="slider" id="brightness" min="1" max="100">
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="screen-rotation">
+                <div class="screen-diagram down" id="mouse-screen">
+                    <div class="circle"></div>
+                </div>
+            </div>
+
+            <label for="rotation" class="label">Rotation</label>
+            <select id="rotation">
+                <option value="down">Down</option>
+                <option value="up">Up</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+            </select>
+            <button id="paintBtn">paint</button>
+        </div>
+    </div>
+
+    <script>
+        const rotationSelect = document.getElementById('rotation');
+        const modeSelect = document.getElementById('mode');
+        const mousespeedSlider = document.getElementById('mousespeed');
+        const scrollspeedSlider = document.getElementById('scrollspeed');
+        const brightnessSlider = document.getElementById('brightness');
+        const screenDiagram = document.getElementById('mouse-screen');
+        const paintBtn = document.getElementById('paintBtn');
+        const pointsArray = []; // Array zur Speicherung der Punkte
+        const maxX = screenDiagram.clientWidth;
+        const maxY = screenDiagram.clientHeight;
+
+        function paintPoint(x, y) {
+            if (x < 0 || x > maxX || y < 0 || y > maxY) {
+                console.error('Point out of bounds!');
+                return;
+            }
+            const point = document.createElement('div');
+            point.classList.add('point');
+
+            // Punkt-Position setzen
+            point.style.left = `${x}px`;
+            point.style.top = `${y}px`;
+
+            // Punkt zum Rechteck hinzufügen
+            screenDiagram.appendChild(point);
+            pointsArray.push(point); // Punkt zum Array hinzufügen
+
+            // Überprüfen, ob mehr als 5 Punkte vorhanden sind
+            if (pointsArray.length > 5) {
+                const oldPoint = pointsArray.shift(); // Ältesten Punkt aus dem Array entfernen
+                screenDiagram.removeChild(oldPoint); // Ältesten Punkt aus dem DOM entfernen
+            }
+        }
+
+        paintBtn.addEventListener('click', () => {
+            // punkt an zufälliger stelle malen
+            console.log('Painting point...');
+            
+            const x = Math.floor(Math.random() * maxX);
+            const y = Math.floor(Math.random() * maxY);
+            paintPoint(x, y);
+        });
+        // Rotation change event
+        rotationSelect.addEventListener('change', (e) => {
+            screenDiagram.className = 'screen-diagram ' + e.target.value;
+            console.log('Rotation:', e.target.value);
+        });
+
+        // Mode change event
+        modeSelect.addEventListener('change', (e) => {
+            console.log('Mode:', e.target.value);
+            
+        });
+
+        // Mousespeed change event
+        mousespeedSlider.addEventListener('input', (e) => {
+            console.log('Mousespeed:', e.target.value);
+        });
+
+        // Scrollspeed change event
+        scrollspeedSlider.addEventListener('input', (e) => {
+            console.log('Scrollspeed:', e.target.value);
+        });
+
+        // Brightness change event
+        brightnessSlider.addEventListener('input', (e) => {
+            console.log('Brightness:', e.target.value);
+        });
+    </script>
+
+</body>
+
+</html>

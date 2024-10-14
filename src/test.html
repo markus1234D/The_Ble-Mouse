@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punkte Zeichnen</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            border: 2px solid #d2e2f2;
+            padding: 20px;
+            width: 400px;
+            margin: 0 auto;
+            background-color: #282828;
+            text-align: center;
+        }
+
+        #rectangle {
+            width: 300px;
+            height: 300px;
+            border: 2px solid #7cb8ff;
+            margin: 20px auto;
+            position: relative;
+            background-color: black;
+        }
+
+        .point {
+            width: 10px;
+            height: 10px;
+            background-color: magenta;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #7cb8ff;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #5aa3e6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Punkte in einem Rechteck zeichnen</h2>
+        <div id="rectangle"></div>
+        <button id="drawButton">Punkt zufällig zeichnen</button>
+    </div>
+
+    <script>
+        const rectangle = document.getElementById('rectangle');
+        const button = document.getElementById('drawButton');
+        const pointsArray = []; // Array zur Speicherung der Punkte
+
+        // Funktion, um einen zufälligen Punkt zu zeichnen
+        function drawPoint(x, y) {
+            // Punkt erstellen
+            const point = document.createElement('div');
+            point.classList.add('point');
+            // const maxX = rectangle.clientWidth - 10;  // Minus Punkt-Breite
+            // const maxY = rectangle.clientHeight - 10; // Minus Punkt-Höhe
+
+            // Punkt-Position setzen
+            point.style.left = `${x}px`;
+            point.style.top = `${y}px`;
+
+            // Punkt zum Rechteck hinzufügen
+            rectangle.appendChild(point);
+            pointsArray.push(point); // Punkt zum Array hinzufügen
+
+            // Überprüfen, ob mehr als 5 Punkte vorhanden sind
+            if (pointsArray.length > 5) {
+                const oldPoint = pointsArray.shift(); // Ältesten Punkt aus dem Array entfernen
+                rectangle.removeChild(oldPoint); // Ältesten Punkt aus dem DOM entfernen
+            }
+        }
+
+        function drawRandomPoint() {
+            drawPoint(Math.floor(Math.random() * 300), Math.floor(Math.random() * 300));
+        }
+        // Event Listener für den Button
+        button.addEventListener('click', drawRandomPoint);
+    </script>
+
+</body>
+
+</html>
