@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "CommunicationWorker.h"
 // #include "DisplayWorker.h"
 #include "GuiWorker.h"
 // #include "TouchWorker.h"
@@ -13,12 +12,11 @@
 // #include <BleKeyboard.h>
 #include "BleCombo.h"
 
-
+#define DEBUG
 // bool checkGesture(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx);
 
 // BleMouse Mouse;
 
-CommunicationWorker communicationWorker;
 // DisplayWorker displayWorker;
 GuiWorker guiWorker;
 // TouchWorker touchWorker;
@@ -38,7 +36,9 @@ int posModulo(int num, int mod){
 }
 
 void debugPrint(String str) {
-    // Serial.println(str);
+#ifdef DEBUG
+    Serial.println(str);
+#endif
 }
 
 void setup() {
@@ -46,7 +46,6 @@ void setup() {
     Serial.begin(115200);
     delay(4000);
     debugPrint("Hello World");
-    communicationWorker.init();
     // displayWorker.init();
     guiWorker.init();
     // touchWorker.init();
@@ -114,7 +113,10 @@ void setup() {
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
         debugPrint("X:" + String(x) + " Y:" + String(y));
         mouseWorker.move((int)x, (int)y);
+
+        guiWorker.sendXY((int)cst816t_touchWorker.getRawX(), (int)cst816t_touchWorker.getRawY());
     });
+
 
     guiWorker.onMoseSpeedChange([](int speed) {
         mouseWorker.setMouseSpeed(speed);
@@ -125,10 +127,15 @@ void setup() {
     guiWorker.onBrightnessChange([](int brightness) {
         // displayWorker.setBrightness(brightness);
     });
+    guiWorker.onRotationChange([](int rotation) {
+        cst816t_touchWorker.setRotation((CST816t_TouchWorker::Rotation)rotation);
+    });
+    guiWorker.onModeChange([](int mode) {
+        mouseWorker.setMode((MouseWorker::Mode)mode);
+    });
 }
 
 void loop() {
-    communicationWorker.handleCommunication();
     guiWorker.handleGui();
     cst816t_touchWorker.handleTouch();
     delay(20);

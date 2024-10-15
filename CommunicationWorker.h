@@ -332,6 +332,7 @@ void CommunicationWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * p
         for (int i = 0; i < numArgs; i++) {
             Serial.println("Arg " + argNames[i] + ": " + args[i]);
         }
+        
         if(command == "/coord"){
             if(numArgs == 2){
                 Serial.println("Received /coord");

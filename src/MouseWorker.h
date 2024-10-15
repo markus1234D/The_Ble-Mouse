@@ -16,6 +16,7 @@ public:
     };
 public:
     void nextMode();
+    void setMode(Mode mode) { this->mode = mode; }
     void move(int x, int y);
     void press(int x, int y);
     void release();
@@ -34,7 +35,7 @@ private:
     int yDiff = 0;
     unsigned long ticks = 0;
 private:
-    Mode Mode = MOUSE_MODE;
+    Mode mode = MOUSE_MODE;
 };
 
 void MouseWorker::init() {
@@ -42,14 +43,14 @@ void MouseWorker::init() {
 }
 
 void MouseWorker::nextMode() {
-    if (Mode == MOUSE_MODE) {
-        Mode = JOYSTICK_MODE;
+    if (mode == MOUSE_MODE) {
+        mode = JOYSTICK_MODE;
         Serial.println("Joystick mode");
-    } else if (Mode == JOYSTICK_MODE) {
-        Mode = SCROLL_MODE;
+    } else if (mode == JOYSTICK_MODE) {
+        mode = SCROLL_MODE;
         Serial.println("Scroll mode");
-    } else if (Mode == SCROLL_MODE) {
-        Mode = MOUSE_MODE;
+    } else if (mode == SCROLL_MODE) {
+        mode = MOUSE_MODE;
         Serial.println("Mouse mode");
     }
 }
@@ -57,7 +58,7 @@ void MouseWorker::nextMode() {
 void MouseWorker::move(int x, int y) {
     ticks++;
     if (ticks % mouseSpeed == 0) {
-        if (Mode == MOUSE_MODE) {
+        if (mode == MOUSE_MODE) {
             if (last_x != -1 && last_y != -1) {
                 xDiff = x - last_x;
                 yDiff = y - last_y;
@@ -66,7 +67,7 @@ void MouseWorker::move(int x, int y) {
             last_x = x;
             last_y = y;
         }
-        else if(Mode == JOYSTICK_MODE) {
+        else if(mode == JOYSTICK_MODE) {
             if (xCenter != -1 && yCenter != -1) {
                 xDiff = x - xCenter;
                 yDiff = y - yCenter;
@@ -75,7 +76,7 @@ void MouseWorker::move(int x, int y) {
                 Mouse.move(xDiff/5, yDiff/5, 0);
             }
         }
-        else if(Mode == SCROLL_MODE) {
+        else if(mode == SCROLL_MODE) {
             if(ticks % scrollSpeed == 0) {
                 if (last_x != -1 && last_y != -1) {
                     xDiff = x - xCenter;
@@ -91,15 +92,15 @@ void MouseWorker::move(int x, int y) {
 }
 
 void MouseWorker::press(int x, int y) {
-    if (Mode == JOYSTICK_MODE) {
+    if (mode == JOYSTICK_MODE) {
         xCenter = x;
         yCenter = y;
     }
-    else if(Mode == MOUSE_MODE) {
+    else if(mode == MOUSE_MODE) {
         last_x = x;
         last_y = y;
     }
-    else if(Mode == SCROLL_MODE) {
+    else if(mode == SCROLL_MODE) {
         xCenter = x;
         yCenter = y;
     }

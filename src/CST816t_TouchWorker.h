@@ -31,6 +31,8 @@ public:
     void onNoGesture(functionPointer callback) { noGestureCallback = callback; }
     void setMaxGestureTime(unsigned long time) { maxGestureTime = time; }
     void setRotation(Rotation rotation) { this->rotation = rotation; }
+    uint16_t getRawX() { return rawX; }
+    uint16_t getRawY() { return rawY; }
 private:
     bool swipe_read = false;
     bool gesture_timeout = false;
@@ -44,6 +46,8 @@ private:
     uint16_t y = 0;
     uint16_t last_x = 0;
     uint16_t last_y = 0;
+    u_int16_t rawX = 0;
+    u_int16_t rawY = 0;
     unsigned long last_millis = 0;
     uint16_t xMin = 0;
     uint16_t xMax = 170;
@@ -78,6 +82,8 @@ private:
 };
 
 void CST816t_TouchWorker::setXY(uint16_t x, uint16_t y) {
+    rawX = x;
+    rawY = y;
     switch (rotation) {
     case USB_UP:
         this->x = xMax - x;
