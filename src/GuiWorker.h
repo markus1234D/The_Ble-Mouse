@@ -5,7 +5,7 @@
 #include "pin_config.h"
 #include <ESPAsyncWebServer.h>
 
-
+#define DEBUG
 
 class GuiWorker {
 
@@ -57,11 +57,12 @@ private:
 
 GuiWorker::GuiWorker() : webSocketServer(81), server(80) {
     // Constructor
-    Serial.println("GuiWorker constructor called");
+    // Serial.println("GuiWorker constructor called");
 }
 
 void GuiWorker::debugPrint(String str) {
 #ifdef DEBUG
+    Serial.print("[debug]: ");
     Serial.println(str);
 #endif
 }
@@ -101,10 +102,14 @@ String GuiWorker::extractCommand(const String& input) {
 }
 
 // Funktion, um die Argumentnamen und -werte zu extrahieren
+// fails if input is not in the form "command?arg1=val1&arg2=val2&..."
 int GuiWorker::extractArgs(const String& input, std::vector<String>& argNames, std::vector<String>& args) {
+    // debugPrint("Extracting arguments");
     int pos = input.indexOf('?');
-    if (pos == -1) return 0; // Falls kein '?' vorhanden ist, keine Argumente
-
+    if (pos == -1) {
+        debugPrint("No arguments found");
+        return 0; // Falls kein '?' vorhanden ist, keine Argumente
+    }
     String query = input.substring(pos + 1);
     int start = 0;
     int end;
@@ -119,7 +124,6 @@ int GuiWorker::extractArgs(const String& input, std::vector<String>& argNames, s
             argNames.push_back(pair.substring(0, equalPos));
             args.push_back(pair.substring(equalPos + 1));
         }
-
         start = end + 1;
     }
 
@@ -153,25 +157,29 @@ void GuiWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, si
 
         std::vector<String> argNames;
         std::vector<String> args;
+
         String command = extractCommand(receivedMessage);
-        Serial.println("Command: " + command);
+        // debugPrint("Command: " + command);
+
         int numArgs = extractArgs(receivedMessage, argNames, args);
+        // debugPrint("Number of arguments: " + String(numArgs));
         for (int i = 0; i < numArgs; i++) {
-            Serial.println("Arg " + argNames[i] + ": " + args[i]);
+            // debugPrint("Arg " + String(argNames[i]) + ": " + String(args[i]));
         }
-        if (command == "setMouseSpeed") {
-            if (onMoseSpeedChangeCallback != NULL) {
-                onMoseSpeedChangeCallback(args[0].toInt());
-            }
-        } else if (command == "setScrollSpeed") {
-            if (onScrollspeedChangeCallback != NULL) {
-                onScrollspeedChangeCallback(args[0].toInt());
-            }
-        } else if (command == "setBrightness") {
-            if (onBrightnessChangeCallback != NULL) {
-                onBrightnessChangeCallback(args[0].toInt());
-            }
-        } else if (command == "setRotation") {
+        // if (command == "setMouseSpeed") {
+        //     if (onMoseSpeedChangeCallback != NULL) {
+        //         onMoseSpeedChangeCallback(args[0].toInt());
+        //     }
+        // } else if (command == "setScrollSpeed") {
+        //     if (onScrollspeedChangeCallback != NULL) {
+        //         onScrollspeedChangeCallback(args[0].toInt());
+        //     }
+        // } else if (command == "setBrightness") {
+        //     if (onBrightnessChangeCallback != NULL) {
+        //         onBrightnessChangeCallback(args[0].toInt());
+        //     }
+         if (command == "setRotation") {
+            // debugPrint("setRotation: " + String(argNames[0]) + " = " + String(args[0]));
             if (onRotationChangeCallback != NULL) {
                 onRotationChangeCallback(args[0].toInt());
             }
@@ -331,9 +339,9 @@ String GuiWorker::getHtml() {
 
             <label for="mode" class="label">Mode</label>
             <select id="mode">
-                <option value="Mouse_Mode">Mouse_Mode</option>
-                <option value="Joystick_Mode">Joystick_Mode</option>
-                <option value="Scroll_Mode">Scroll_Mode</option>
+                <option value="0">Mouse_Mode</option>
+                <option value="1">Joystick_Mode</option>
+                <option value="2">Scroll_Mode</option>
             </select>
 
             <div class="slider-container">
@@ -361,10 +369,10 @@ String GuiWorker::getHtml() {
 
             <label for="rotation" class="label">Rotation</label>
             <select id="rotation">
-                <option value="down">Down</option>
-                <option value="up">Up</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
+                <option value="1">Down</option>
+                <option value="0">Up</option>
+                <option value="2">Left</option>
+                <option value="3">Right</option>
             </select>
             <button id="paintBtn">paint</button>
         </div>
@@ -464,14 +472,15 @@ String GuiWorker::getHtml() {
         // Rotation change event
         rotationSelect.addEventListener('change', (e) => {
             screenDiagram.className = 'screen-diagram ' + e.target.value;
+            console.log(screenDiagram.className);
             console.log('Rotation:', e.target.value);
-            ws.send("setRotation?" + e.target.value);
+            ws.send("setRotation?rotation=" + e.target.value);
         });
 
         // Mode change event
         modeSelect.addEventListener('change', (e) => {
             console.log('Mode:', e.target.value);
-            ws.send("setMode?" + e.target.value);
+            ws.send("setMode?mode=" + e.target.value);
         });
 
         // Mousespeed change event

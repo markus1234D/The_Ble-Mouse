@@ -13,9 +13,6 @@
 #include "BleCombo.h"
 
 #define DEBUG
-// bool checkGesture(Data (&array)[TOUCH_ARRAY_SIZE], int currentIdx);
-
-// BleMouse Mouse;
 
 // DisplayWorker displayWorker;
 GuiWorker guiWorker;
@@ -128,6 +125,7 @@ void setup() {
         // displayWorker.setBrightness(brightness);
     });
     guiWorker.onRotationChange([](int rotation) {
+        debugPrint("Rotation: " + String((CST816t_TouchWorker::Rotation)rotation));
         cst816t_touchWorker.setRotation((CST816t_TouchWorker::Rotation)rotation);
     });
     guiWorker.onModeChange([](int mode) {

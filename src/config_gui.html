@@ -133,9 +133,9 @@
 
             <label for="mode" class="label">Mode</label>
             <select id="mode">
-                <option value="Mouse_Mode">Mouse_Mode</option>
-                <option value="Joystick_Mode">Joystick_Mode</option>
-                <option value="Scroll_Mode">Scroll_Mode</option>
+                <option value="0">Mouse_Mode</option>
+                <option value="1">Joystick_Mode</option>
+                <option value="2">Scroll_Mode</option>
             </select>
 
             <div class="slider-container">
@@ -163,10 +163,10 @@
 
             <label for="rotation" class="label">Rotation</label>
             <select id="rotation">
-                <option value="down">Down</option>
-                <option value="up">Up</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
+                <option value="1">Down</option>
+                <option value="0">Up</option>
+                <option value="2">Left</option>
+                <option value="3">Right</option>
             </select>
             <button id="paintBtn">paint</button>
         </div>
@@ -266,14 +266,15 @@
         // Rotation change event
         rotationSelect.addEventListener('change', (e) => {
             screenDiagram.className = 'screen-diagram ' + e.target.value;
+            console.log(screenDiagram.className);
             console.log('Rotation:', e.target.value);
-            ws.send("setRotation?" + e.target.value);
+            ws.send("setRotation?rotation=" + e.target.value);
         });
 
         // Mode change event
         modeSelect.addEventListener('change', (e) => {
             console.log('Mode:', e.target.value);
-            ws.send("setMode?" + e.target.value);
+            ws.send("setMode?mode=" + e.target.value);
         });
 
         // Mousespeed change event
