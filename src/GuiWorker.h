@@ -471,9 +471,26 @@ String GuiWorker::getHtml() {
         });
         // Rotation change event
         rotationSelect.addEventListener('change', (e) => {
-            screenDiagram.className = 'screen-diagram ' + e.target.value;
-            console.log(screenDiagram.className);
-            console.log('Rotation:', e.target.value);
+            var rotation;
+            switch (e.target.value) {
+                case '0':
+                    rotation = 'up';
+                    break;
+                case '1':
+                    rotation = 'down';
+                    break;
+                case '2':
+                    rotation = 'left';
+                    break;
+                case '3':
+                    rotation = 'right';
+                    break;
+                default:
+                    rotation = 'down';
+                    break;
+            }
+            screenDiagram.className = 'screen-diagram ' + rotation;
+            console.log('Rotation: ', rotation);
             ws.send("setRotation?rotation=" + e.target.value);
         });
 
