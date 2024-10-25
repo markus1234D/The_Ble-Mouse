@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benachrichtigung auf Knopfdruck</title>
+</head>
+<body>
+    <button id="notifyBtn">Benachrichtigung anzeigen</button>
+
+    <script>
+        const notifyBtn = document.getElementById('notifyBtn');
+
+        notifyBtn.addEventListener('click', () => notify('Hallo Welt!'));
+
+        function notify(text) {
+            if (Notification.permission === 'granted') {
+                new Notification(text);
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(text);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

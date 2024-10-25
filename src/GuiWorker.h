@@ -19,7 +19,7 @@ public:
     String getHtml();
     String getName();
     void sendXY(int x, int y);
-    void onMoseSpeedChange(valChangeFunc func) {onMoseSpeedChangeCallback = func;}
+    void onMouseSpeedChange(valChangeFunc func) {onMouseSpeedChangeCallback = func;}
     void onScrollspeedChange(valChangeFunc func) {onScrollspeedChangeCallback = func;}
     void onBrightnessChange(valChangeFunc func) {onBrightnessChangeCallback = func;}
     void onRotationChange(valChangeFunc func) {onRotationChangeCallback = func;}
@@ -42,7 +42,7 @@ private:
     WebSocketsServer webSocketServer;
     AsyncWebServer server;
 
-    valChangeFunc onMoseSpeedChangeCallback = NULL;
+    valChangeFunc onMouseSpeedChangeCallback = NULL;
     valChangeFunc onScrollspeedChangeCallback = NULL;
     valChangeFunc onBrightnessChangeCallback = NULL;
     valChangeFunc onRotationChangeCallback = NULL;
@@ -166,19 +166,21 @@ void GuiWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, si
         for (int i = 0; i < numArgs; i++) {
             // debugPrint("Arg " + String(argNames[i]) + ": " + String(args[i]));
         }
-        // if (command == "setMouseSpeed") {
-        //     if (onMoseSpeedChangeCallback != NULL) {
-        //         onMoseSpeedChangeCallback(args[0].toInt());
-        //     }
-        // } else if (command == "setScrollSpeed") {
-        //     if (onScrollspeedChangeCallback != NULL) {
-        //         onScrollspeedChangeCallback(args[0].toInt());
-        //     }
+        if (command == "setMouseSpeed") {
+            debugPrint("setMouseSpeed: " + String(argNames[0]) + " = " + String(args[0]));
+            if (onMouseSpeedChangeCallback != NULL) {
+                onMouseSpeedChangeCallback(args[0].toInt());
+            }
+        } else if (command == "setScrollSpeed") {
+            debugPrint("setScrollSpeed: " + String(argNames[0]) + " = " + String(args[0]));
+            if (onScrollspeedChangeCallback != NULL) {
+                onScrollspeedChangeCallback(args[0].toInt());
+            }
         // } else if (command == "setBrightness") {
         //     if (onBrightnessChangeCallback != NULL) {
         //         onBrightnessChangeCallback(args[0].toInt());
         //     }
-         if (command == "setRotation") {
+        } else if (command == "setRotation") {
             // debugPrint("setRotation: " + String(argNames[0]) + " = " + String(args[0]));
             if (onRotationChangeCallback != NULL) {
                 onRotationChangeCallback(args[0].toInt());
@@ -255,8 +257,7 @@ String GuiWorker::getHtml() {
         }
 
         .slider {
-            -webkit-appearance: none;
-            width: 100%;
+            width: 80%;
             height: 5px;
             background: #7cb8ff;
             outline: none;
@@ -345,18 +346,21 @@ String GuiWorker::getHtml() {
             </select>
 
             <div class="slider-container">
-                <span>Mousespeed</span>
-                <input type="range" class="slider" id="mousespeed" min="1" max="100">
+                <label for="mousespeed" class="label">Mousespeed</label>
+                <input type="range" class="slider" id="mousespeed" min="1" max="10" value="1">
+                <output for="mousespeed">1</output>
             </div>
 
             <div class="slider-container">
-                <span>Scrollspeed</span>
-                <input type="range" class="slider" id="scrollspeed" min="1" max="100">
+                <label for="scrollspeed" class="label">Scrollspeed</label>
+                <input type="range" class="slider" id="scrollspeed" min="1" max="10" value="1">
+                <output for="scrollspeed">1</output>
             </div>
 
             <div class="slider-container">
-                <span>Brightness</span>
-                <input type="range" class="slider" id="brightness" min="1" max="100">
+                <label for="brightness" class="label">Brightness</label>
+                <input type="range" class="slider" id="brightness" min="1" max="10" value="1">
+                <output for="brightness">1</output>
             </div>
         </div>
 
@@ -382,8 +386,11 @@ String GuiWorker::getHtml() {
         const rotationSelect = document.getElementById('rotation');
         const modeSelect = document.getElementById('mode');
         const mousespeedSlider = document.getElementById('mousespeed');
+        const mousespeedSliderOutput = document.querySelector('output[for="mousespeed"]');
         const scrollspeedSlider = document.getElementById('scrollspeed');
+        const scrollspeedSliderOutput = document.querySelector('output[for="scrollspeed"]');
         const brightnessSlider = document.getElementById('brightness');
+        const brightnessSliderOutput = document.querySelector('output[for="brightness"]');
         const screenDiagram = document.getElementById('mouse-screen');
         const paintBtn = document.getElementById('paintBtn');
         const pointsArray = []; // Array zur Speicherung der Punkte
@@ -503,25 +510,31 @@ String GuiWorker::getHtml() {
         // Mousespeed change event
         mousespeedSlider.addEventListener('input', (e) => {
             console.log('Mousespeed:', e.target.value);
-            ws.send("setMouseSpeed?" + e.target.value);
+            mousespeedSliderOutput.value = e.target.value;
+            ws.send("setMouseSpeed?speed=" + e.target.value);
         });
 
         // Scrollspeed change event
         scrollspeedSlider.addEventListener('input', (e) => {
             console.log('Scrollspeed:', e.target.value);
-            ws.send("setScrollSpeed?" + e.target.value);
+            scrollspeedSliderOutput.value = e.target.value;
+            ws.send("setScrollSpeed?speed=" + e.target.value);
         });
 
         // Brightness change event
         brightnessSlider.addEventListener('input', (e) => {
             console.log('Brightness:', e.target.value);
-            ws.send("setBrightness?" + e.target.value);
+            brightnessSliderOutput.value = e.target.value;
+            ws.send("setBrightness?value=" + e.target.value);
         });
     </script>
 
 </body>
 
 </html>
+
+
+
 
 )rawliteral";
 

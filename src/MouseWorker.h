@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "BleCombo.h"
 
+#define DEBUG
 
 // needed for noGestureCallback (x, y) in CST816t_TouchWorker.h
 class MouseWorker {
@@ -17,16 +18,18 @@ public:
 public:
     void nextMode();
     void setMode(Mode mode) { this->mode = mode; }
+    Mode getMode() { return this->mode; }
     void move(int x, int y);
     void press(int x, int y);
     void release();
     void setScrollSpeed(int speed) { scrollSpeed = speed; }
     void setMouseSpeed(int speed) { mouseSpeed = speed; }
-    // BleMouse Mouse;  
+    void setJoystickSpeed(int speed) { joystickSpeed = speed; }
 
 private:
     int scrollSpeed = 6;
     int mouseSpeed = 1;
+    int joystickSpeed = 1;
     int xCenter = -1;
     int yCenter = -1;
     int last_x = -1;
@@ -34,8 +37,13 @@ private:
     int xDiff = 0;
     int yDiff = 0;
     unsigned long ticks = 0;
-private:
     Mode mode = MOUSE_MODE;
+private:
+    void debugPrint(String str) {
+        #ifdef DEBUG
+            Serial.println(str);
+        #endif
+    }
 };
 
 void MouseWorker::init() {
@@ -67,7 +75,9 @@ void MouseWorker::move(int x, int y) {
             last_x = x;
             last_y = y;
         }
-        else if(mode == JOYSTICK_MODE) {
+    }
+    if(ticks % joystickSpeed == 0) {
+        if(mode == JOYSTICK_MODE) {
             if (xCenter != -1 && yCenter != -1) {
                 xDiff = x - xCenter;
                 yDiff = y - yCenter;
@@ -76,15 +86,16 @@ void MouseWorker::move(int x, int y) {
                 Mouse.move(xDiff/5, yDiff/5, 0);
             }
         }
-        else if(mode == SCROLL_MODE) {
-            if(ticks % scrollSpeed == 0) {
-                if (last_x != -1 && last_y != -1) {
-                    xDiff = x - xCenter;
-                    yDiff = y - yCenter;
-                    if (abs(xDiff) < 5){ xDiff = 0; }
-                    if (abs(yDiff) < 5){ yDiff = 0; }
-                    Mouse.move(0, 0, yDiff/10, xDiff/10);
-                }
+    }
+    if (ticks % scrollSpeed == 0) {
+        if(mode == SCROLL_MODE) {
+            if (xCenter != -1 && yCenter != -1) {
+                xDiff = x - xCenter;
+                yDiff = y - yCenter;
+                if (abs(xDiff) < 5){ xDiff = 0; }
+                if (abs(yDiff) < 5){ yDiff = 0; }
+                Mouse.move(0, 0, yDiff/10, xDiff/10);
+                debugPrint("xDiff: " + String(xDiff/1) + " yDiff: " + String(yDiff/1));
             }
         }
         // Serial.println("xDiff: " + String(xDiff) + " yDiff: " + String(yDiff));
@@ -103,12 +114,15 @@ void MouseWorker::press(int x, int y) {
     else if(mode == SCROLL_MODE) {
         xCenter = x;
         yCenter = y;
+        debugPrint("xCenter: " + String(xCenter) + " yCenter: " + String(yCenter));
     }
 }
 
 void MouseWorker::release() {
     last_x = -1;
     last_y = -1;
+    xCenter = -1;
+    yCenter = -1;
 }
 
 #endif // MOUSEWORKER_H

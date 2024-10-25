@@ -49,8 +49,7 @@
         }
 
         .slider {
-            -webkit-appearance: none;
-            width: 100%;
+            width: 80%;
             height: 5px;
             background: #7cb8ff;
             outline: none;
@@ -139,18 +138,21 @@
             </select>
 
             <div class="slider-container">
-                <span>Mousespeed</span>
-                <input type="range" class="slider" id="mousespeed" min="1" max="100">
+                <label for="mousespeed" class="label">Mousespeed</label>
+                <input type="range" class="slider" id="mousespeed" min="1" max="10" value="1">
+                <output for="mousespeed">1</output>
             </div>
 
             <div class="slider-container">
-                <span>Scrollspeed</span>
-                <input type="range" class="slider" id="scrollspeed" min="1" max="100">
+                <label for="scrollspeed" class="label">Scrollspeed</label>
+                <input type="range" class="slider" id="scrollspeed" min="1" max="10" value="1">
+                <output for="scrollspeed">1</output>
             </div>
 
             <div class="slider-container">
-                <span>Brightness</span>
-                <input type="range" class="slider" id="brightness" min="1" max="100">
+                <label for="brightness" class="label">Brightness</label>
+                <input type="range" class="slider" id="brightness" min="1" max="10" value="1">
+                <output for="brightness">1</output>
             </div>
         </div>
 
@@ -176,8 +178,11 @@
         const rotationSelect = document.getElementById('rotation');
         const modeSelect = document.getElementById('mode');
         const mousespeedSlider = document.getElementById('mousespeed');
+        const mousespeedSliderOutput = document.querySelector('output[for="mousespeed"]');
         const scrollspeedSlider = document.getElementById('scrollspeed');
+        const scrollspeedSliderOutput = document.querySelector('output[for="scrollspeed"]');
         const brightnessSlider = document.getElementById('brightness');
+        const brightnessSliderOutput = document.querySelector('output[for="brightness"]');
         const screenDiagram = document.getElementById('mouse-screen');
         const paintBtn = document.getElementById('paintBtn');
         const pointsArray = []; // Array zur Speicherung der Punkte
@@ -297,19 +302,22 @@
         // Mousespeed change event
         mousespeedSlider.addEventListener('input', (e) => {
             console.log('Mousespeed:', e.target.value);
-            ws.send("setMouseSpeed?" + e.target.value);
+            mousespeedSliderOutput.value = e.target.value;
+            ws.send("setMouseSpeed?speed=" + e.target.value);
         });
 
         // Scrollspeed change event
         scrollspeedSlider.addEventListener('input', (e) => {
             console.log('Scrollspeed:', e.target.value);
-            ws.send("setScrollSpeed?" + e.target.value);
+            scrollspeedSliderOutput.value = e.target.value;
+            ws.send("setScrollSpeed?speed=" + e.target.value);
         });
 
         // Brightness change event
         brightnessSlider.addEventListener('input', (e) => {
             console.log('Brightness:', e.target.value);
-            ws.send("setBrightness?" + e.target.value);
+            brightnessSliderOutput.value = e.target.value;
+            ws.send("setBrightness?value=" + e.target.value);
         });
     </script>
 

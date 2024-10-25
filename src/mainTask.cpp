@@ -60,52 +60,72 @@ void setup() {
     // touchWorker.onMove(&mouseMoveFunc);
 
     cst816t_touchWorker.onSwipeLeft([](uint16_t x, uint16_t y) {
-        debugPrint("SWIPE LEFT");
-        mouseWorker.nextMode();
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SWIPE LEFT");
+            mouseWorker.nextMode();
+        }
     });
     cst816t_touchWorker.onSwipeRight([](uint16_t x, uint16_t y) {
-        debugPrint("SWIPE RIGHT");
-        Mouse.click(MOUSE_RIGHT);
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SWIPE RIGHT");
+            Mouse.click(MOUSE_RIGHT);
+        }
     });
     cst816t_touchWorker.onSwipeUp([](uint16_t x, uint16_t y) {
-        debugPrint("SWIPE UP");
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.print("c");
-        delay(100);
-        Keyboard.releaseAll();
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SWIPE UP");
+            Keyboard.press(KEY_LEFT_CTRL);
+            Keyboard.print("c");
+            delay(100);
+            Keyboard.releaseAll();
+        }
     });
     cst816t_touchWorker.onSwipeDown([](uint16_t x, uint16_t y) {
-        debugPrint("SWIPE DOWN");
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.print("v");
-        delay(100);
-        Keyboard.releaseAll();
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SWIPE DOWN");
+            Keyboard.press(KEY_LEFT_CTRL);
+            Keyboard.print("v");
+            delay(100);
+            Keyboard.releaseAll();
+        }
     });
     cst816t_touchWorker.onSingleClick ([](uint16_t x, uint16_t y) {
-        debugPrint("SINGLE CLICK");
-        mouseWorker.press((int)x, (int)y);
+        // if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SINGLE CLICK");
+            mouseWorker.press((int)x, (int)y);
+        // }
     });
     cst816t_touchWorker.onSingleClickRelease([](uint16_t x, uint16_t y) {
-        debugPrint("SINGLE CLICK RELEASE");
-        mouseWorker.release();
-        Mouse.click();
+        // if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("SINGLE CLICK RELEASE");
+            mouseWorker.release();
+            Mouse.click();
+        // }
     });
     cst816t_touchWorker.onDoubleClick([](uint16_t x, uint16_t y) {
-        debugPrint("DOUBLE CLICK");
-        mouseWorker.press((int)x, (int)y);
-        Mouse.click();
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("DOUBLE CLICK");
+            mouseWorker.press((int)x, (int)y);
+            Mouse.click();
+        }
     });
     cst816t_touchWorker.onDoubleClickRelease([](uint16_t x, uint16_t y) {
-        debugPrint("DOUBLE CLICK RELEASE");
-        mouseWorker.release();
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("DOUBLE CLICK RELEASE");
+            mouseWorker.release();
+        }
     });
     cst816t_touchWorker.onLongPress([](uint16_t x, uint16_t y) {
-        // debugPrint("LONG PRESS");
-        Mouse.press(MOUSE_LEFT);
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("LONG PRESS");
+            Mouse.press(MOUSE_LEFT);
+        }
     });
     cst816t_touchWorker.onLongPressRelease([](uint16_t x, uint16_t y) {
-        debugPrint("LONG PRESS RELEASE; X:" + String(x) + " Y:" + String(y));
-        Mouse.release(MOUSE_LEFT);
+        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+            debugPrint("LONG PRESS RELEASE; X:" + String(x) + " Y:" + String(y));
+            Mouse.release(MOUSE_LEFT);
+        }
     });
     cst816t_touchWorker.onNoGesture([](uint16_t x, uint16_t y) {
         debugPrint("X:" + String(x) + " Y:" + String(y));
@@ -115,8 +135,8 @@ void setup() {
     });
 
 
-    guiWorker.onMoseSpeedChange([](int speed) {
-        mouseWorker.setMouseSpeed(speed);
+    guiWorker.onMouseSpeedChange([](int speed) {
+            mouseWorker.setMouseSpeed(speed);
     });
     guiWorker.onScrollspeedChange([](int speed) {
         mouseWorker.setScrollSpeed(speed);
