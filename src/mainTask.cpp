@@ -59,16 +59,17 @@ void setup() {
     // touchWorker.onRelease(&joystickMouseReleaseFunc);
     // touchWorker.onMove(&mouseMoveFunc);
 
-    cst816t_touchWorker.onSwipeLeft([](uint16_t x, uint16_t y) {
-        if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
-            debugPrint("SWIPE LEFT");
-            mouseWorker.nextMode();
-        }
-    });
+    // cst816t_touchWorker.onSwipeLeft([](uint16_t x, uint16_t y) {
+    //     if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
+    //         debugPrint("SWIPE LEFT");
+    //         mouseWorker.nextMode();
+    //     }
+    // });
     cst816t_touchWorker.onSwipeRight([](uint16_t x, uint16_t y) {
         if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
             debugPrint("SWIPE RIGHT");
             Mouse.click(MOUSE_RIGHT);
+            guiWorker.notify("Right click");
         }
     });
     cst816t_touchWorker.onSwipeUp([](uint16_t x, uint16_t y) {
@@ -78,6 +79,7 @@ void setup() {
             Keyboard.print("c");
             delay(100);
             Keyboard.releaseAll();
+            guiWorker.notify("Copied to clipboard");
         }
     });
     cst816t_touchWorker.onSwipeDown([](uint16_t x, uint16_t y) {
@@ -100,6 +102,7 @@ void setup() {
             debugPrint("SINGLE CLICK RELEASE");
             mouseWorker.release();
             Mouse.click();
+
         // }
     });
     cst816t_touchWorker.onDoubleClick([](uint16_t x, uint16_t y) {

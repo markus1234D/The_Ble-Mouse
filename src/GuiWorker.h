@@ -28,6 +28,7 @@ public:
     int getXMax();
     int getYMin();
     int getYMax();
+    void notify(String message);
 
 
 private:
@@ -58,6 +59,11 @@ private:
 GuiWorker::GuiWorker() : webSocketServer(81), server(80) {
     // Constructor
     // Serial.println("GuiWorker constructor called");
+}
+
+void GuiWorker::notify(String message) {
+    webSocketServer.broadcastTXT("notify?msg=" + message);
+    debugPrint("Notified: " + message);
 }
 
 void GuiWorker::debugPrint(String str) {
@@ -212,6 +218,7 @@ String GuiWorker::getHtml() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <title>Control Panel</title>
     <style>
         body {
@@ -221,7 +228,7 @@ String GuiWorker::getHtml() {
         }
 
         .container {
-            border: 2px solid #d2e2f2;
+            border: 20px solid #d2e2f2;
             padding: 20px;
             width: 80%;
             margin: 0 auto;
@@ -230,13 +237,9 @@ String GuiWorker::getHtml() {
             justify-content: space-between;
         }
 
-        .left-column, .right-column {
-            width: 40%;
-        }
-
         .output {
             width: 100%;
-            height: 100px;
+            height: 80px;
             color: rgb(255, 255, 255);
             background-color: #1a1a1a;
             border: 2px solid #7cb8ff;
@@ -333,9 +336,52 @@ String GuiWorker::getHtml() {
 </head>
 
 <body>
+        <div class="w3-third w3-container w3-blue">
+            <h2> Funktinen zuordnen </h2>
+            <div class="w3-third w3-container w3-grey">
+                <div class="function-dropdown">
+                    <label class="label">Swipe-Up</label>
+                    <select class="drop-class"></select>
+                </div>
+            </div>
+            
+            <div class="function-dropdown">
+                <label class="label">Swipe-Down</label>
+                <select class="drop-class"></select>
+            </div>
+            <div class="function-dropdown">
+                <label class="label">Swipe-Left</label>
+                <select class="drop-class"></select>
+            </div>
+            <div class="function-dropdown">
+                <label class="label">Swipe-Right</label>
+                <select class="drop-class"></select>
+            </div>
+            <div class="function-dropdown">
+                <label class="label">Tap</label>
+                <select class="drop-class"></select>
+            </div>
+        </div>
 
-    <div class="container">
-        <div class="left-column">
+
+        <div class="w3-twothird w3-container w3-black">
+            <div class="screen-rotation">
+                <div class="screen-diagram down" id="mouse-screen">
+                    <div class="circle"></div>
+                </div>
+            </div>
+
+            <label for="rotation" class="label">Rotation</label>
+            <select id="rotation">
+                <option value="1">Down</option>
+                <option value="0">Up</option>
+                <option value="2">Left</option>
+                <option value="3">Right</option>
+            </select>
+            <button id="paintBtn">paint</button>
+        </div>
+
+        <div class="w3-third w3-container w3-grey">
             <textarea class="output" readonly>Text\nText\n...</textarea>
 
             <label for="mode" class="label">Mode</label>
@@ -364,23 +410,6 @@ String GuiWorker::getHtml() {
             </div>
         </div>
 
-        <div class="right-column">
-            <div class="screen-rotation">
-                <div class="screen-diagram down" id="mouse-screen">
-                    <div class="circle"></div>
-                </div>
-            </div>
-
-            <label for="rotation" class="label">Rotation</label>
-            <select id="rotation">
-                <option value="1">Down</option>
-                <option value="0">Up</option>
-                <option value="2">Left</option>
-                <option value="3">Right</option>
-            </select>
-            <button id="paintBtn">paint</button>
-        </div>
-    </div>
 
     <script>
         const rotationSelect = document.getElementById('rotation');
@@ -397,7 +426,31 @@ String GuiWorker::getHtml() {
         const maxX = screenDiagram.clientWidth;
         const maxY = screenDiagram.clientHeight;
 
+        const dropDowns = document.querySelectorAll('.drop-class');
+        const options = ['Option 1', 'Option 2', 'Option 3'];
+
+        dropDowns.forEach(dropDown => {
+            options.forEach(optionText => {
+                const option = document.createElement('option');
+                option.value = optionText.toLowerCase().replace(' ', '_');
+                option.text = optionText;
+                dropDown.appendChild(option);
+            });
+        });
+
         var ws = new WebSocket('ws://' + window.location.hostname + ':81');
+        
+        function notify(text) {
+            if (Notification.permission === 'granted') {
+                new Notification(text);
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(text);
+                    }
+                });
+            }
+        }
 
         ws.onopen = function() {
             console.log("Hello, Server");
@@ -412,6 +465,9 @@ String GuiWorker::getHtml() {
                 const x = 170-parseInt(args[0]);
                 const y = 320-parseInt(args[1]);
                 paintPoint(x, y);
+            }
+            if (command === "notify") {
+                notify(args[0]);
             }
         }
 
