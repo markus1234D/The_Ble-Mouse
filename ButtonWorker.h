@@ -3,13 +3,23 @@
 
 #include <Arduino.h>
 #include <Button.h>
+#include <vector>
 
 #define DEBUG
+
+#define BUTTON_2F GPIO_NUM_2
+#define BUTTON_2B GPIO_NUM_3
+#define BUTTON_3 GPIO_NUM_4
+#define BUTTON_4 GPIO_NUM_5
+#define BUTTON_5 GPIO_NUM_6
 
 class ButtonWorker {
 public:
     ButtonWorker();
     void init();
+    // vector of buttons
+    std::vector<Button*> buttons;
+
 
 private:
     static void debugPrint(String str) {
@@ -81,6 +91,14 @@ private:
 };
 
 void ButtonWorker::init() {
+
+    // fill the buttons vector
+    buttons.push_back(btn_2f);
+    buttons.push_back(btn_2b);
+    buttons.push_back(btn_3);
+    buttons.push_back(btn_4);
+    buttons.push_back(btn_5);
+
     // 2f
     btn_2f->attachPressDownEventCb(btn2f_pressDownCallback, NULL);
     btn_2f->attachPressUpEventCb(btn2f_pressUpCallback, NULL);

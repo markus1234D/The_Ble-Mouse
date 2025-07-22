@@ -4,12 +4,15 @@
 #include <WiFi.h>
 #include "pin_config.h"
 #include <ESPAsyncWebServer.h>
+#include "TFT_eSPI.h"
+
 
 #define DEBUG
 
 class GuiWorker {
 
     typedef void (*valChangeFunc)(int attribute);   
+    typedef void (*funcChangeFunc)(String item, String action, String function);
 
 public:
     // Constructor
@@ -33,6 +36,7 @@ public:
 
 private:
     // Private member variables
+    
     String html;
     String name;
     void (*callback)(void);
@@ -42,12 +46,15 @@ private:
     int yMax;
     WebSocketsServer webSocketServer;
     AsyncWebServer server;
+    TFT_eSPI tft;
 
     valChangeFunc onMouseSpeedChangeCallback = NULL;
     valChangeFunc onScrollspeedChangeCallback = NULL;
     valChangeFunc onBrightnessChangeCallback = NULL;
     valChangeFunc onRotationChangeCallback = NULL;
     valChangeFunc onModeChangeCallback = NULL;
+    funcChangeFunc onGestureFunctionChangeCallback = NULL;
+    
 
     // Private member functions
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
@@ -82,6 +89,21 @@ void GuiWorker::init() {
     Serial.println("Connected to WiFi");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+
+    pinMode(PIN_POWER_ON, OUTPUT);
+    pinMode(PIN_LCD_BL, OUTPUT);
+
+    digitalWrite(PIN_POWER_ON, HIGH);
+    analogWrite(PIN_LCD_BL, 100);
+
+    tft.init();
+    tft.setRotation(1);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(3);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(0, 0);
+    tft.println(WiFi.localIP());
+
 
     // Start WebSocket-Server
     webSocketServer.begin();
@@ -169,9 +191,9 @@ void GuiWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, si
 
         int numArgs = extractArgs(receivedMessage, argNames, args);
         // debugPrint("Number of arguments: " + String(numArgs));
-        for (int i = 0; i < numArgs; i++) {
-            // debugPrint("Arg " + String(argNames[i]) + ": " + String(args[i]));
-        }
+        // for (int i = 0; i < numArgs; i++) {
+        //     debugPrint("Arg " + String(argNames[i]) + ": " + String(args[i]));
+        // }
         if (command == "setMouseSpeed") {
             debugPrint("setMouseSpeed: " + String(argNames[0]) + " = " + String(args[0]));
             if (onMouseSpeedChangeCallback != NULL) {
@@ -195,8 +217,12 @@ void GuiWorker::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, si
             if (onModeChangeCallback != NULL) {
                 onModeChangeCallback(args[0].toInt());
             }
+        } else if (command == "gestureFunction") {
+            if (onGestureFunctionChangeCallback != NULL && numArgs >= 3) {
+                // item, action, function
+                onGestureFunctionChangeCallback(args[0], args[1], args[2]);
+            }
         }
-
         break;
     }
 }
@@ -213,380 +239,214 @@ String GuiWorker::getHtml() {
     return R"rawliteral(
     
 <!DOCTYPE html>
-<html lang="de">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <title>Control Panel</title>
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
+	<meta charset="UTF-8">
+	<title>Config GUI</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		body { font-family: Arial, sans-serif; margin: 2em; }
+		header { margin-bottom: 2em; text-align: center;}
+		main { margin: auto; }
+    .row-container {
+      display: flex; /* Flexbox aktivieren */
+      flex-wrap: wrap; /* Zeilenumbruch aktivieren */
+      padding: 10px;
+      column-gap: 20px; /* Abstand zwischen den Spalten */
+      justify-content: center; /* Zentriert die Spalten */
+      text-align: center;
+	  	width: 100%;
+    }
 
-        .container {
-            border: 20px solid #d2e2f2;
-            padding: 20px;
-            width: 80%;
-            margin: 0 auto;
-            background-color: #282828;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .output {
-            width: 100%;
-            height: 80px;
-            color: rgb(255, 255, 255);
-            background-color: #1a1a1a;
-            border: 2px solid #7cb8ff;
-            padding: 10px;
-            resize: none;
-        }
-
-        .label {
-            margin-bottom: 5px;
-            display: block;
-            color: white;
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .slider {
-            width: 80%;
-            height: 5px;
-            background: #7cb8ff;
-            outline: none;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            background: #7cb8ff;
-            cursor: pointer;
-        }
-
-        .slider-container span {
-            width: 120px;
-            color: white;
-        }
-
-        .screen-rotation {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            position: relative;
-        }
-
-        .screen-diagram {
-            width: 170px;
-            height: 360px;
-            border: 2px solid #7cb8ff;
-            position: relative;
-            transition: transform 0.5s;
-        }
-
-        .screen-diagram.up {
-            transform: rotate(0deg);
-        }
-
-        .screen-diagram.down {
-            transform: rotate(180deg);
-        }
-
-        .screen-diagram.left {
-            transform: rotate(270deg);
-        }
-
-        .screen-diagram.right {
-            transform: rotate(90deg);
-        }
-
-        .circle {
-            width: 15px;
-            height: 15px;
-            background-color: #7cb8ff;
-            border-radius: 50%;
-            position: absolute;
-            top: 10px;
-            left: calc(50% - 7.5px);
-        }
-        
-        .point {
-            width: 10px;
-            height: 10px;
-            background-color: magenta;
-            border-radius: 50%;
-            position: absolute;
-        }
-
-    </style>
+    .column-container {
+      flex: 1; /* Gleichmäßige Breite für alle Spalten */
+      display: flex;
+      flex-direction: column; /* Spaltenanordnung */
+      border-color: #4CAF50;
+      border-style: solid;
+      border-width: 2px;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+			min-width: 40%;
+			row-gap: 10px; /* Abstand zwischen den Zeilen */
+    }
+	</style>
 </head>
-
 <body>
-        <div class="w3-third w3-container w3-blue">
-            <h2> Funktinen zuordnen </h2>
-            <div class="w3-third w3-container w3-grey">
-                <div class="function-dropdown">
-                    <label class="label">Swipe-Up</label>
-                    <select class="drop-class"></select>
-                </div>
-            </div>
-            
-            <div class="function-dropdown">
-                <label class="label">Swipe-Down</label>
-                <select class="drop-class"></select>
-            </div>
-            <div class="function-dropdown">
-                <label class="label">Swipe-Left</label>
-                <select class="drop-class"></select>
-            </div>
-            <div class="function-dropdown">
-                <label class="label">Swipe-Right</label>
-                <select class="drop-class"></select>
-            </div>
-            <div class="function-dropdown">
-                <label class="label">Tap</label>
-                <select class="drop-class"></select>
-            </div>
-        </div>
-
-
-        <div class="w3-twothird w3-container w3-black">
-            <div class="screen-rotation">
-                <div class="screen-diagram down" id="mouse-screen">
-                    <div class="circle"></div>
-                </div>
-            </div>
-
-            <label for="rotation" class="label">Rotation</label>
+	<header>
+		<h1>Configuration GUI</h1>
+	</header>
+	<main>
+		<div class="row-container">
+			<div class="column-container">
+				<div class="row-container">
+						<h2>Touch Control</h2>
+				</div>
+				<div class="row-container">
+					<div class="column-container">
+						<h2>Screen Rotation</h2>
+						<label for="rotation" class="label">USB Position</label>
             <select id="rotation">
                 <option value="1">Down</option>
                 <option value="0">Up</option>
                 <option value="2">Left</option>
                 <option value="3">Right</option>
             </select>
-            <button id="paintBtn">paint</button>
-        </div>
-
-        <div class="w3-third w3-container w3-grey">
-            <textarea class="output" readonly>Text\nText\n...</textarea>
-
-            <label for="mode" class="label">Mode</label>
-            <select id="mode">
-                <option value="0">Mouse_Mode</option>
-                <option value="1">Joystick_Mode</option>
-                <option value="2">Scroll_Mode</option>
+					</div>
+					<div class="column-container">
+						<h2>Gesture functions</h2>
+						<label for="swipe-up">Swipe-Up:</label>
+            <select class="function-select" id="swipe-up">
+							<!-- wird in js befüllt -->
             </select>
+						<label for="swipe-down">Swipe-Down:</label>
+						<select class="function-select" id="swipe-down">
+							<!-- wird in js befüllt -->
+						</select>
+						<label for="swipe-left">Swipe-Left:</label>
+						<select class="function-select" id="swipe-left">
+							<!-- wird in js befüllt -->
+						</select>
+						<label for="swipe-right">Swipe-Right:</label>
+						<select class="function-select" id="swipe-right">
+							<!-- wird in js befüllt -->
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="column-container">
+				<h2>Button Control</h2>
+					<div class="row-container">
+						<label>Action:</label>
+						<label>Function:</label>
+					</div>
+				Button 1:
+				<div class="btn_functions" id="button1">
+					<div class="row-container">
+						<button id="add_funk_to_button1" class="add_funk_btn">+</button>
+					</div>
+				</div>
+				Button 2:
+				<div class="btn_functions" id="button2">
+					<div class="row-container">
+						<button id="add_funk_to_button2" class="add_funk_btn">+</button>
+					</div>
+				</div>
+			</div>
+		</div>
 
-            <div class="slider-container">
-                <label for="mousespeed" class="label">Mousespeed</label>
-                <input type="range" class="slider" id="mousespeed" min="1" max="10" value="1">
-                <output for="mousespeed">1</output>
-            </div>
+		<script>
 
-            <div class="slider-container">
-                <label for="scrollspeed" class="label">Scrollspeed</label>
-                <input type="range" class="slider" id="scrollspeed" min="1" max="10" value="1">
-                <output for="scrollspeed">1</output>
-            </div>
+			const gestureFunctions = [
+				{ value: 'none', text: 'Keine Funktion' },
+				{ value: 'open_menu', text: 'Menü öffnen' },
+				{ value: 'scroll_up', text: 'Scrollen nach oben' },
+				{ value: 'scroll_down', text: 'Scrollen nach unten' },
+				{ value: 'scroll_left', text: 'Scrollen nach links' },
+				{ value: 'scroll_right', text: 'Scrollen nach rechts' },
+				{ value: 'volume_up', text: 'Lautstärke erhöhen' },
+				{ value: 'volume_down', text: 'Lautstärke verringern' },
+				{ value: 'copy', text: 'Kopieren' },
+				{ value: 'paste', text: 'Einfügen' },
+				{ value: 'undo', text: 'Rückgängig' },
+				{ value: 'redo', text: 'Wiederholen' }
+			];
+			const buttonActions = [
+				{ value: 'none', text: 'Keine Aktion' },
+				{ value: 'click', text: 'Klick' },
+				{ value: 'long_press', text: 'Langer Druck' },
+				{ value: 'double_click', text: 'Doppelklick' },
+				{ value: 'hold_swipe up', text: 'Halten und nach oben wischen' },
+				{ value: 'hold_swipe_down', text: 'Halten und nach unten wischen' },
+				{ value: 'hold_swipe_left', text: 'Halten und nach links wischen' },
+				{ value: 'hold_swipe_right', text: 'Halten und nach rechts wischen' }
+			];
 
-            <div class="slider-container">
-                <label for="brightness" class="label">Brightness</label>
-                <input type="range" class="slider" id="brightness" min="1" max="10" value="1">
-                <output for="brightness">1</output>
-            </div>
-        </div>
+			// Fülle die Dropdowns für Gestenfunktionen
+			const swipe_function_selects = document.querySelectorAll('.function-select');
+			swipe_function_selects.forEach(select => {
+				gestureFunctions.forEach(func => {
+					const option = document.createElement('option');
+					option.value = func.value;
+					option.textContent = func.text;
+					select.appendChild(option);
+				});
+			});
+			swipe_function_selects.forEach(select => {
+				select.addEventListener('change', function() {
+					const url = `funcChange?item=screen&action=${this.id}&function=${this.value}`;
+					console.log(url);
+					// TODO: Webserver send Message
+				});
+			});
 
+			// Event Delegation für dynamisch hinzugefügte Remove-Buttons
+			document.body.addEventListener('click', function(e) {
+				if (e.target.classList.contains('remove_funk_btn')) {
+					const btnFunctions = e.target.parentElement.parentElement;
+					if (btnFunctions.children.length > 1) {
+						btnFunctions.removeChild(e.target.parentElement);
+					}
+				}
+			});
+			// bei klick auf + Button ein neues Action-Function Paar über dem +-Button hinzufügen
+			document.querySelectorAll('.add_funk_btn').forEach(button => {
+				button.addEventListener('click', function() {
+					const btnFunctions = this.parentElement.parentElement;
+					const newFunctionRow = document.createElement('div');
+					newFunctionRow.classList.add('row-container');
+					newFunctionRow.innerHTML = `
+						<select class="action-select">
+							<!-- wird in js befüllt -->
+						</select>
+						<select class="function-select">
+							<!-- wird in js befüllt -->
+						</select>
+						<button class="remove_funk_btn">-</button>
+					`;
+					btnFunctions.insertBefore(newFunctionRow, this.parentElement);
 
-    <script>
-        const rotationSelect = document.getElementById('rotation');
-        const modeSelect = document.getElementById('mode');
-        const mousespeedSlider = document.getElementById('mousespeed');
-        const mousespeedSliderOutput = document.querySelector('output[for="mousespeed"]');
-        const scrollspeedSlider = document.getElementById('scrollspeed');
-        const scrollspeedSliderOutput = document.querySelector('output[for="scrollspeed"]');
-        const brightnessSlider = document.getElementById('brightness');
-        const brightnessSliderOutput = document.querySelector('output[for="brightness"]');
-        const screenDiagram = document.getElementById('mouse-screen');
-        const paintBtn = document.getElementById('paintBtn');
-        const pointsArray = []; // Array zur Speicherung der Punkte
-        const maxX = screenDiagram.clientWidth;
-        const maxY = screenDiagram.clientHeight;
+					const actionSelect = newFunctionRow.querySelector('.action-select');
+					buttonActions.forEach(action => {
+						const option = document.createElement('option');
+						option.value = action.value;
+						option.textContent = action.text;
+						actionSelect.appendChild(option);
+					});
+					actionSelect.addEventListener('change', function() {
+						const url = `funcChange?item=${btnFunctions.id}&action=${actionSelect.value}&function=${functionSelect.value}`;
+						console.log(url);
+						// TODO: Webserver send Message
+					});
 
-        const dropDowns = document.querySelectorAll('.drop-class');
-        const options = ['Option 1', 'Option 2', 'Option 3'];
+					const functionSelect = newFunctionRow.querySelector('.function-select');
+					gestureFunctions.forEach(func => {
+						const option = document.createElement('option');
+						option.value = func.value;
+						option.textContent = func.text;
+						functionSelect.appendChild(option);
+					});
+					functionSelect.addEventListener('change', function() {
+						const url = `funcChange?item=${btnFunctions.id}&action=${actionSelect.value}&function=${functionSelect.value}`;
+						console.log(url);
+						// TODO: Webserver send Message
+					});
+				});
+			});
 
-        dropDowns.forEach(dropDown => {
-            options.forEach(optionText => {
-                const option = document.createElement('option');
-                option.value = optionText.toLowerCase().replace(' ', '_');
-                option.text = optionText;
-                dropDown.appendChild(option);
-            });
-        });
-
-        var ws = new WebSocket('ws://' + window.location.hostname + ':81');
-        
-        function notify(text) {
-            if (Notification.permission === 'granted') {
-                new Notification(text);
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification(text);
-                    }
-                });
-            }
-        }
-
-        ws.onopen = function() {
-            console.log("Hello, Server");
-        };
-        ws.onmessage = function (evt) {
-            const command = extractCommand(evt.data);
-            const { argNames, args } = extractArgs(evt.data);
-            console.log("Command: " + command);
-            console.log("ArgNames: " + argNames);
-            console.log("Args: " + args);
-            if (command === "coord") {
-                const x = 170-parseInt(args[0]);
-                const y = 320-parseInt(args[1]);
-                paintPoint(x, y);
-            }
-            if (command === "notify") {
-                notify(args[0]);
-            }
-        }
-
-        function extractCommand(input) {
-            const pos = input.indexOf('?');
-            if (pos !== -1) {
-                return input.substring(0, pos);
-            } else {
-                return input; // Wenn kein '?' gefunden wird, ist der ganze String der Command
-            }
-        }
-
-        function extractArgs(input) {
-            const argNames = [];
-            const args = [];
-            
-            const pos = input.indexOf('?');
-            if (pos === -1) return { argNames, args }; // Falls kein '?' vorhanden ist, keine Argumente
-
-            const query = input.substring(pos + 1);
-            const pairs = query.split('&');
-
-            pairs.forEach(pair => {
-                const [name, value] = pair.split('=');
-                if (name && value) {
-                    argNames.push(name);
-                    args.push(value);
-                }
-            });
-
-            return { argNames, args };
-        }
-
-        function paintPoint(x, y) {
-            if (x < 0 || x > maxX || y < 0 || y > 320) {
-                console.error('Point out of bounds!');
-                return;
-            }
-            const point = document.createElement('div');
-            point.classList.add('point');
-
-            // Punkt-Position setzen
-            point.style.left = `${x}px`;
-            point.style.top = `${y}px`;
-
-            // Punkt zum Rechteck hinzufügen
-            screenDiagram.appendChild(point);
-            pointsArray.push(point); // Punkt zum Array hinzufügen
-
-            // Überprüfen, ob mehr als 5 Punkte vorhanden sind
-            if (pointsArray.length > 10) {
-                const oldPoint = pointsArray.shift(); // Ältesten Punkt aus dem Array entfernen
-                screenDiagram.removeChild(oldPoint); // Ältesten Punkt aus dem DOM entfernen
-            }
-        }
-
-        paintBtn.addEventListener('click', () => {
-            // punkt an zufälliger stelle malen
-            console.log('Painting point...');
-            
-            const x = Math.floor(Math.random() * maxX);
-            const y = Math.floor(Math.random() * maxY);
-            paintPoint(x, y);
-        });
-        // Rotation change event
-        rotationSelect.addEventListener('change', (e) => {
-            var rotation;
-            switch (e.target.value) {
-                case '0':
-                    rotation = 'up';
-                    break;
-                case '1':
-                    rotation = 'down';
-                    break;
-                case '2':
-                    rotation = 'left';
-                    break;
-                case '3':
-                    rotation = 'right';
-                    break;
-                default:
-                    rotation = 'down';
-                    break;
-            }
-            screenDiagram.className = 'screen-diagram ' + rotation;
-            console.log('Rotation: ', rotation);
-            ws.send("setRotation?rotation=" + e.target.value);
-        });
-
-        // Mode change event
-        modeSelect.addEventListener('change', (e) => {
-            console.log('Mode:', e.target.value);
-            ws.send("setMode?mode=" + e.target.value);
-        });
-
-        // Mousespeed change event
-        mousespeedSlider.addEventListener('input', (e) => {
-            console.log('Mousespeed:', e.target.value);
-            mousespeedSliderOutput.value = e.target.value;
-            ws.send("setMouseSpeed?speed=" + e.target.value);
-        });
-
-        // Scrollspeed change event
-        scrollspeedSlider.addEventListener('input', (e) => {
-            console.log('Scrollspeed:', e.target.value);
-            scrollspeedSliderOutput.value = e.target.value;
-            ws.send("setScrollSpeed?speed=" + e.target.value);
-        });
-
-        // Brightness change event
-        brightnessSlider.addEventListener('input', (e) => {
-            console.log('Brightness:', e.target.value);
-            brightnessSliderOutput.value = e.target.value;
-            ws.send("setBrightness?value=" + e.target.value);
-        });
-    </script>
-
+			const rotationSelect = document.getElementById('rotation');
+			rotationSelect.addEventListener('change', function() {
+				const url = `rotation?value=${this.value}`;
+				console.log(url);
+				// TODO: Webserver send Message
+			});
+		</script>
+	</main>
 </body>
-
 </html>
 
 

@@ -224,7 +224,7 @@
             });
         });
 
-        var ws = new WebSocket('ws://' + window.location.hostname + ':81');
+        // var ws = new WebSocket('ws://' + window.location.hostname + ':81');
         
         function notify(text) {
             if (Notification.permission === 'granted') {
@@ -238,24 +238,24 @@
             }
         }
 
-        ws.onopen = function() {
-            console.log("Hello, Server");
-        };
-        ws.onmessage = function (evt) {
-            const command = extractCommand(evt.data);
-            const { argNames, args } = extractArgs(evt.data);
-            console.log("Command: " + command);
-            console.log("ArgNames: " + argNames);
-            console.log("Args: " + args);
-            if (command === "coord") {
-                const x = 170-parseInt(args[0]);
-                const y = 320-parseInt(args[1]);
-                paintPoint(x, y);
-            }
-            if (command === "notify") {
-                notify(args[0]);
-            }
-        }
+        // ws.onopen = function() {
+        //     console.log("Hello, Server");
+        // };
+        // ws.onmessage = function (evt) {
+        //     const command = extractCommand(evt.data);
+        //     const { argNames, args } = extractArgs(evt.data);
+        //     console.log("Command: " + command);
+        //     console.log("ArgNames: " + argNames);
+        //     console.log("Args: " + args);
+        //     if (command === "coord") {
+        //         const x = 170-parseInt(args[0]);
+        //         const y = 320-parseInt(args[1]);
+        //         paintPoint(x, y);
+        //     }
+        //     if (command === "notify") {
+        //         notify(args[0]);
+        //     }
+        // }
 
         function extractCommand(input) {
             const pos = input.indexOf('?');

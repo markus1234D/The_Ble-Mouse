@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Config GUI</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		body { font-family: Arial, sans-serif; margin: 2em; }
+		header { margin-bottom: 2em; text-align: center;}
+		main { margin: auto; }
+    .row-container {
+      display: flex; /* Flexbox aktivieren */
+      flex-wrap: wrap; /* Zeilenumbruch aktivieren */
+      gap: 20px;
+      padding: 20px;
+      column-gap: 20px; /* Abstand zwischen den Spalten */
+      justify-content: center; /* Zentriert die Spalten */
+      text-align: center;
+	  	width: 100%;
+    }
+
+    .column-container {
+      flex: 1; /* Gleichmäßige Breite für alle Spalten */
+      display: flex;
+      flex-direction: column; /* Spaltenanordnung */
+      border-color: #4CAF50;
+      border-style: solid;
+      border-width: 2px;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+	</style>
+</head>
+<body>
+	<header>
+		<h1>GUI</h1>
+	</header>
+	<main>
+		<div class="row-container">
+			<div class="column-container">
+				<div class="row-container">
+						<label for="speed">Speed:</label>
+						<input type="range" id="speed" name="speed" min="0" max="100" value="50" class="slider" />
+						<input type="number" id="speedValue" name="speedValue" value="50" class="number-input" />
+				</div>
+				<div class="row-container">
+						<div class="column-container">
+						<h2>Temperature Control</h2>
+						<label for="temperature">Temperature:</label>
+						<input type="number" id="temperatureValue" name="temperatureValue" value="50" class="number-input" />
+					</div>
+					<div class="column-container">
+						<h2>Humidity Control</h2>
+						<label for="humidity">Humidity:</label>
+						<input type="number" id="humidityValue" name="humidityValue" value="50" class="number-input" />
+					</div>
+				</div>
+			</div>
+			<div class="column-container">
+				<h2>Mode Selection</h2>
+			</div>
+		</div>
+
+		<script>
+			// Synchronize speed slider and number input
+			const speedSlider = document.getElementById('speed');
+			const speedValue = document.getElementById('speedValue');
+			speedSlider.addEventListener('input', function() {
+				speedValue.value = speedSlider.value;
+			});
+			speedValue.addEventListener('input', function() {
+				speedSlider.value = speedValue.value;
+			});
+		</script>
+			
+	</main>
+</body>
+</html>

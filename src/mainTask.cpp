@@ -11,6 +11,7 @@
 // #include <BleMouse.h>
 // #include <BleKeyboard.h>
 #include "BleCombo.h"
+// #include "ButtonWorker.h"
 
 #define DEBUG
 
@@ -23,6 +24,7 @@ GuiWorker guiWorker;
 CST816t_TouchWorker cst816t_touchWorker;
 MouseWorker mouseWorker;
 // BleKeyboard bleKeyboard;
+// ButtonWorker buttonWorker;
 
 int posModulo(int num, int mod){
     int rest = (num) % mod;
@@ -55,9 +57,7 @@ void setup() {
 
     Keyboard.begin();
 
-    // touchWorker.onPress(&joystickMousePressFunc);
-    // touchWorker.onRelease(&joystickMouseReleaseFunc);
-    // touchWorker.onMove(&mouseMoveFunc);
+    // buttonWorker.init();
 
     // cst816t_touchWorker.onSwipeLeft([](uint16_t x, uint16_t y) {
     //     if (mouseWorker.getMode() != MouseWorker::Mode::SCROLL_MODE) {
@@ -160,4 +160,8 @@ void loop() {
     guiWorker.handleGui();
     cst816t_touchWorker.handleTouch();
     delay(20);
+}
+
+void processMessage(String item, String action, String function) {
+    
 }
