@@ -2,9 +2,11 @@
 #include <Wire.h>
 #include <cst816t.h>
 #include "pin_config.h"
+#include <map>
+
+#define DEBUG
 
 class CST816t_TouchWorker {
-    typedef void (*functionPointer)(uint16_t x, uint16_t y);
 public:
     enum Rotation {
         USB_UP = 0,
@@ -18,22 +20,15 @@ public:
     void handleTouch();
     cst816t touchpad = cst816t(Wire, PIN_TOUCH_RES, PIN_TOUCH_INT); //begin of Wire is in Libra
 
-    void onSwipeLeft(functionPointer callback) { onSwipeLeftCallback = callback; }
-    void onSwipeRight(functionPointer callback) { onSwipeRightCallback = callback; }
-    void onSwipeUp(functionPointer callback) { onSwipeUpCallback = callback; }
-    void onSwipeDown(functionPointer callback) { onSwipeDownCallback = callback; }
-    void onSingleClick(functionPointer callback) { onSingleClickCallback = callback; }
-    void onSingleClickRelease(functionPointer callback) { onSingleClickReleaseCallback = callback; }
-    void onDoubleClick(functionPointer callback) { onDoubleClickCallback = callback; }
-    void onDoubleClickRelease(functionPointer callback) { onDoubleClickReleaseCallback = callback; }
-    void onLongPress(functionPointer callback) { onLongPressCallback = callback; }
-    void onLongPressRelease(functionPointer callback) { onLongPressReleaseCallback = callback; }
-    void onNoGesture(functionPointer callback) { noGestureCallback = callback; }
     void setMaxGestureTime(unsigned long time) { maxGestureTime = time; }
     void setRotation(Rotation rotation) { this->rotation = rotation; }
     uint16_t getRawX() { return rawX; }
     uint16_t getRawY() { return rawY; }
+
+    bool setActionFunction(String action, std::function<void(int, int)> callback);
+
 private:
+    void debugPrint(String str);
     bool swipe_read = false;
     bool gesture_timeout = false;
     bool movemnet = true;
@@ -58,20 +53,10 @@ private:
     uint16_t real_yMin = 7;
     uint16_t real_yMax = 312;
 
-    functionPointer onPressCallback = NULL;
-    functionPointer onReleaseCallback = NULL;
-    functionPointer onSingleClickCallback = NULL;
-    functionPointer onSingleClickReleaseCallback = NULL;
-    functionPointer onDoubleClickCallback = NULL;
-    functionPointer onDoubleClickReleaseCallback = NULL;
-    functionPointer onLongPressCallback = NULL;
-    functionPointer onLongPressReleaseCallback = NULL;
-    functionPointer onSwipeLeftCallback = NULL;
-    functionPointer onSwipeRightCallback = NULL;
-    functionPointer onSwipeUpCallback = NULL;
-    functionPointer onSwipeDownCallback = NULL;
-    functionPointer noGestureCallback = NULL;
-    functionPointer gestureCallback = NULL;
+    std::map<String, std::function<void(int, int)>> callbacks;
+
+
+    std::function<void(int, int)> gestureCallbackBuffer = NULL;
     uint16_t gestureX = 0;
     uint16_t gestureY = 0;
     unsigned long maxGestureTime = 1000;
@@ -80,6 +65,21 @@ private:
     void checkGesture();
     void setXY(uint16_t x, uint16_t y);
 };
+
+void CST816t_TouchWorker::debugPrint(String str) {
+#ifdef DEBUG
+    Serial.print("[TouchWorker]: ");
+    Serial.println(str);
+#endif
+}
+
+bool CST816t_TouchWorker::setActionFunction(String action, std::function<void(int, int)> callback) {
+    if (callbacks.find(action) != callbacks.end()) {
+        callbacks[action] = callback;
+        return true;
+    }
+    return false;
+}
 
 void CST816t_TouchWorker::setXY(uint16_t x, uint16_t y) {
     rawX = x;
@@ -109,12 +109,24 @@ void CST816t_TouchWorker::setXY(uint16_t x, uint16_t y) {
 
 void CST816t_TouchWorker::init() {
     touchpad.begin(mode_touch);
+
+    this->callbacks["swipeLeft"] = NULL;
+    this->callbacks["swipeRight"] = NULL;
+    this->callbacks["swipeUp"] = NULL;
+    this->callbacks["swipeDown"] = NULL;
+    this->callbacks["singleClick"] = NULL;
+    this->callbacks["singleClickRelease"] = NULL;
+    this->callbacks["doubleClick"] = NULL;
+    this->callbacks["doubleClickRelease"] = NULL;
+    this->callbacks["longPress"] = NULL;
+    this->callbacks["longPressRelease"] = NULL;
+    this->callbacks["noGesture"] = NULL;
 }
 
 void CST816t_TouchWorker::handleTouch() {
 
     if (start && millis() - last_millis > maxGestureTime) {
-        Serial.println("Gesture timeout");
+        debugPrint("Gesture timeout");
 
         gesture_timeout = true;
         start = false;
@@ -126,9 +138,10 @@ void CST816t_TouchWorker::handleTouch() {
         setXY(touchpad.x, touchpad.y);
         if (last_x == 0) {
             if (clicked) {
-                if (onDoubleClickCallback != NULL){
-                    onDoubleClickCallback(this->x, this->y);
+                if (callbacks["doubleClick"] != NULL){
+                    callbacks["doubleClick"](this->x, this->y);
                 }
+                debugPrint("Double click detected");
             } else {
                 // Serial.println("first touch");
                 last_millis = millis();
@@ -136,9 +149,10 @@ void CST816t_TouchWorker::handleTouch() {
                 gesture_timeout = false;
                 swipe_read = false;
                 movemnet = false;
-                if (onSingleClickCallback != NULL){
-                    onSingleClickCallback(this->x, this->y);
+                if (callbacks["singleClick"] != NULL){
+                    callbacks["singleClick"](this->x, this->y);
                 }
+                debugPrint("Single click detected");
             }
         } else {
             // not first touch/or move
@@ -149,10 +163,11 @@ void CST816t_TouchWorker::handleTouch() {
 
         if (gesture_timeout) {
             // no gesture
-            gestureCallback = NULL;
-            if(noGestureCallback != NULL){
-                noGestureCallback(this->x, this->y);
+            gestureCallbackBuffer = NULL;
+            if(callbacks["noGesture"] != NULL){
+                callbacks["noGesture"](this->x, this->y);
             }
+            debugPrint("no X: " + String(this->x) + ", Y: " + String(this->y));
             if (swipe_read) {
                 // too late
             } else {
@@ -165,7 +180,10 @@ void CST816t_TouchWorker::handleTouch() {
                         // double click and hold
                     } else {
                         // click and hold
-                        onLongPressCallback(this->x, this->y);
+                        if(callbacks["longPress"] != NULL){
+                            callbacks["longPress"](this->x, this->y);
+                        }
+                        debugPrint("Long press detected");
                         longPress = true;
                     }
                 }
@@ -201,15 +219,18 @@ void CST816t_TouchWorker::handleTouch() {
                 // too late for gesture
                 if (longPress) {
                     // drag and drop release
-                    onLongPressReleaseCallback(this->x, this->y);
+                    if(callbacks["longPressRelease"] != NULL){
+                        callbacks["longPressRelease"](this->x, this->y);
+                    }
+                    debugPrint("Long press release detected");
                     longPress = false;
                 }
             } else {              
                 if (swipe_read) {
                     // swipe detected
-                    if (gestureCallback != NULL){
-                        gestureCallback(gestureX, gestureY);
-                        gestureCallback = NULL;
+                    if (gestureCallbackBuffer != NULL){
+                        gestureCallbackBuffer(gestureX, gestureY);
+                        gestureCallbackBuffer = NULL;
                     }
                     start = false;
                 } else {
@@ -220,26 +241,28 @@ void CST816t_TouchWorker::handleTouch() {
                         // no movement
                         if (clicked) {
                             // double click release
-                            if (onDoubleClickReleaseCallback != NULL){
-                                gestureCallback = onDoubleClickReleaseCallback;
+                            if (callbacks["doubleClickRelease"] != NULL){
+                                gestureCallbackBuffer = callbacks["doubleClickRelease"];
                                 gestureX = last_x;
                                 gestureY = last_y;
                                 // clicked = false;
                                 start = true;
                             }
+                            debugPrint("Double click release detected");
                         } else {
                             // click release
                             clicked = true;
-                            if (onSingleClickReleaseCallback != NULL){
-                                gestureCallback = onSingleClickReleaseCallback;
+                            if (callbacks["singleClickRelease"] != NULL){
+                                gestureCallbackBuffer = callbacks["singleClickRelease"];
                                 gestureX = last_x;
                                 gestureY = last_y;
                                 start = true;
                             }
+                            debugPrint("Single click release detected");
                         }
-                        if (gestureCallback != NULL){
-                            gestureCallback(gestureX, gestureY);
-                            gestureCallback = NULL;
+                        if (gestureCallbackBuffer != NULL){
+                            gestureCallbackBuffer(gestureX, gestureY);
+                            gestureCallbackBuffer = NULL;
                         }
                     }
                 }
@@ -265,32 +288,36 @@ void CST816t_TouchWorker::checkGesture(){
         switch (rotation)
         {
         case USB_DOWN :
-            if(onSwipeUpCallback != NULL){
-                gestureCallback = onSwipeUpCallback;
+            if(callbacks["swipeUp"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeUp"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Up detected");
             break;
         case USB_UP :
-            if(onSwipeDownCallback != NULL){
-                gestureCallback = onSwipeDownCallback;
+            if(callbacks["swipeDown"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeDown"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Down detected");
             break;
         case USB_LEFT:
-            if(onSwipeRightCallback != NULL){
-                gestureCallback = onSwipeRightCallback;
+            if(callbacks["swipeRight"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeRight"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Right detected");
             break;
         case USB_RIGHT:
-            if(onSwipeLeftCallback != NULL){
-                gestureCallback = onSwipeLeftCallback;
+            if(callbacks["swipeLeft"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeLeft"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Left detected");
             break;
         default:
             break;
@@ -302,32 +329,36 @@ void CST816t_TouchWorker::checkGesture(){
         switch (rotation)
         {
         case USB_DOWN :
-            if(onSwipeUpCallback != NULL){
-                gestureCallback = onSwipeUpCallback;
+            if(callbacks["swipeUp"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeUp"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Up detected");
             break;
         case USB_UP :
-            if(onSwipeDownCallback != NULL){
-                gestureCallback = onSwipeDownCallback;
+            if(callbacks["swipeDown"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeDown"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Down detected");
             break;
         case USB_LEFT:
-            if(onSwipeLeftCallback != NULL){
-                gestureCallback = onSwipeLeftCallback;
+            if(callbacks["swipeLeft"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeLeft"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Left detected");
             break;
         case USB_RIGHT:
-            if(onSwipeRightCallback != NULL){
-                gestureCallback = onSwipeRightCallback;
+            if(callbacks["swipeRight"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeRight"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Right detected");
             break;
         default:
             break;
@@ -339,33 +370,36 @@ void CST816t_TouchWorker::checkGesture(){
         switch (rotation)
         {
         case USB_DOWN :
-            if(onSwipeLeftCallback != NULL){
-                gestureCallback = onSwipeLeftCallback;
-
+            if(callbacks["swipeLeft"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeLeft"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Left detected");
             break;
         case USB_UP :
-            if(onSwipeRightCallback != NULL){
-                gestureCallback = onSwipeRightCallback;
+            if(callbacks["swipeRight"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeRight"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Right detected");
             break;
         case USB_LEFT:
-            if(onSwipeUpCallback != NULL){
-                gestureCallback = onSwipeUpCallback;
+            if(callbacks["swipeUp"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeUp"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Up detected");
             break;
         case USB_RIGHT:
-            if(onSwipeDownCallback != NULL){
-                gestureCallback = onSwipeDownCallback;
+            if(callbacks["swipeDown"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeDown"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Down detected");
             break;
         default:
             break;
@@ -377,32 +411,36 @@ void CST816t_TouchWorker::checkGesture(){
         switch (rotation)
         {
         case USB_DOWN :
-        if(onSwipeRightCallback != NULL){
-            gestureCallback = onSwipeRightCallback;
-            gestureX = this->x;
-            gestureY = this->y;
+            if(callbacks["swipeRight"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeRight"];
+                gestureX = this->x;
+                gestureY = this->y;
             }
+            debugPrint("Swipe Right detected");
             break;
         case USB_UP :
-            if(onSwipeLeftCallback != NULL){
-                gestureCallback = onSwipeLeftCallback;
+            if(callbacks["swipeLeft"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeLeft"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Left detected");
             break;
         case USB_LEFT:
-            if(onSwipeDownCallback != NULL){
-                gestureCallback = onSwipeDownCallback;
+            if(callbacks["swipeDown"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeDown"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Down detected");
             break;
         case USB_RIGHT:
-            if(onSwipeUpCallback != NULL){
-                gestureCallback = onSwipeUpCallback;
+            if(callbacks["swipeUp"] != NULL){
+                gestureCallbackBuffer = callbacks["swipeUp"];
                 gestureX = this->x;
                 gestureY = this->y;
             }
+            debugPrint("Swipe Up detected");
             break;
         default:
             break;
@@ -410,14 +448,14 @@ void CST816t_TouchWorker::checkGesture(){
         break;
     case GESTURE_LONG_PRESS:
         // Serial.println("LONG PRESS");
-        if(onLongPressCallback != NULL){
-            gestureCallback = onLongPressCallback;
+        if(callbacks["longPress"] != NULL){
+            gestureCallbackBuffer = callbacks["longPress"];
             gestureX = this->x;
             gestureY = this->y;
         }
         break;
     default:
-        Serial.println("?");
+        debugPrint("?");
         break;
     }
 }

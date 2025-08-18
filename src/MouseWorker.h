@@ -6,27 +6,27 @@
 
 #define DEBUG
 
-// needed for noGestureCallback (x, y) in CST816t_TouchWorker.h
 class MouseWorker {
 public:
-    void init(); // Method to initialize the mouse worker
     enum Mode{
         MOUSE_MODE,
         JOYSTICK_MODE,
         SCROLL_MODE
     };
 public:
+    void init(); // Method to initialize the mouse worker
+    std::function<void(int, int)> getFunction(String function);
     void nextMode();
     void setMode(Mode mode) { this->mode = mode; }
     Mode getMode() { return this->mode; }
-    void move(int x, int y);
-    void press(int x, int y);
-    void release();
+
     void setScrollSpeed(int speed) { scrollSpeed = speed; }
     void setMouseSpeed(int speed) { mouseSpeed = speed; }
     void setJoystickSpeed(int speed) { joystickSpeed = speed; }
 
 private:
+    std::map<String, std::function<void(int, int)>> functionMap;
+
     int scrollSpeed = 6;
     int mouseSpeed = 1;
     int joystickSpeed = 1;
@@ -39,16 +39,46 @@ private:
     unsigned long ticks = 0;
     Mode mode = MOUSE_MODE;
 private:
-    void debugPrint(String str) {
-        #ifdef DEBUG
-            Serial.println(str);
-        #endif
-    }
+    void debugPrint(String str);
+    void move(int x, int y);
+    void press(int x, int y);
+    void release(int x, int y);
 };
+
+void MouseWorker::debugPrint(String str) {
+    #ifdef DEBUG
+        Serial.println(str);
+    #endif
+}
 
 void MouseWorker::init() {
     Mouse.begin();
+    Keyboard.begin();
+    functionMap["move"] = std::bind(&MouseWorker::move, this, std::placeholders::_1, std::placeholders::_2);
+    functionMap["press"] = std::bind(&MouseWorker::press, this, std::placeholders::_1, std::placeholders::_2);
+    functionMap["release"] = std::bind(&MouseWorker::release, this, std::placeholders::_1, std::placeholders::_2);
+    functionMap["copy"] = std::function<void(int, int)>([](int x, int y) {
+        Serial.println("MouseWorker: Copy action triggered at X: " + String(x) + ", Y: " + String(y));
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.press('c');
+        delay(100);
+        Keyboard.releaseAll();
+    });
+    functionMap["paste"] = std::function<void(int, int)>([](int x, int y) {
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.press('v');
+        delay(100);
+        Keyboard.releaseAll();
+    });
 }
+
+std::function<void(int, int)> MouseWorker::getFunction(String function) {
+    if (functionMap.find(function) != functionMap.end()) {
+        return functionMap[function];
+    }
+    return NULL;
+}
+
 
 void MouseWorker::nextMode() {
     if (mode == MOUSE_MODE) {
@@ -118,7 +148,7 @@ void MouseWorker::press(int x, int y) {
     }
 }
 
-void MouseWorker::release() {
+void MouseWorker::release(int x, int y) {
     last_x = -1;
     last_y = -1;
     xCenter = -1;

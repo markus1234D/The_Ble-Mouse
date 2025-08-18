@@ -59,10 +59,17 @@
 					</div>
 					<div class="column-container">
 						<h2>Gesture functions</h2>
+
+						<label for="singleClick">Single Click:</label>
+						<select class="function-select" id="singleClick">
+										<!-- wird in js befüllt -->
+						</select>
+
 						<label for="swipe-up">Swipe-Up:</label>
-            <select class="function-select" id="swipe-up">
-							<!-- wird in js befüllt -->
-            </select>
+						<select class="function-select" id="swipe-up">
+										<!-- wird in js befüllt -->
+						</select>
+			
 						<label for="swipe-down">Swipe-Down:</label>
 						<select class="function-select" id="swipe-down">
 							<!-- wird in js befüllt -->
@@ -100,6 +107,23 @@
 		</div>
 
 		<script>
+
+			var ws = new WebSocket('ws://' + window.location.hostname + ':81');
+			ws.onopen = function() {
+            	console.log("Hello, Server");
+        	};
+			ws.onmessage = function (evt) {
+				const command = extractCommand(evt.data);
+				const { argNames, args } = extractArgs(evt.data);
+				console.log("Command: " + command);
+				console.log("ArgNames: " + argNames);
+				console.log("Args: " + args);
+				if (command === "coord") {
+					const x = 170-parseInt(args[0]);
+					const y = 320-parseInt(args[1]);
+					paintPoint(x, y);
+				}
+			};
 
 			const gestureFunctions = [
 				{ value: 'none', text: 'Keine Funktion' },
@@ -141,6 +165,7 @@
 					const url = `funcChange?item=screen&action=${this.id}&function=${this.value}`;
 					console.log(url);
 					// TODO: Webserver send Message
+					ws.send(url);
 				});
 			});
 
@@ -181,6 +206,7 @@
 						const url = `funcChange?item=${btnFunctions.id}&action=${actionSelect.value}&function=${functionSelect.value}`;
 						console.log(url);
 						// TODO: Webserver send Message
+						ws.send(url);
 					});
 
 					const functionSelect = newFunctionRow.querySelector('.function-select');
@@ -194,6 +220,7 @@
 						const url = `funcChange?item=${btnFunctions.id}&action=${actionSelect.value}&function=${functionSelect.value}`;
 						console.log(url);
 						// TODO: Webserver send Message
+						ws.send(url);
 					});
 				});
 			});
@@ -203,6 +230,7 @@
 				const url = `rotation?value=${this.value}`;
 				console.log(url);
 				// TODO: Webserver send Message
+				ws.send(url);
 			});
 		</script>
 	</main>
