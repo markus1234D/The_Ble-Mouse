@@ -54,6 +54,11 @@ void MouseWorker::debugPrint(String str) {
 void MouseWorker::init() {
     Mouse.begin();
     Keyboard.begin();
+    while (!Keyboard.isConnected()) {
+        debugPrint("Waiting for Mouse and Keyboard to connect...");
+        delay(3000);
+    }
+    
     functionMap["move"] = std::bind(&MouseWorker::move, this, std::placeholders::_1, std::placeholders::_2);
     functionMap["press"] = std::bind(&MouseWorker::press, this, std::placeholders::_1, std::placeholders::_2);
     functionMap["release"] = std::bind(&MouseWorker::release, this, std::placeholders::_1, std::placeholders::_2);
@@ -65,10 +70,13 @@ void MouseWorker::init() {
         Keyboard.releaseAll();
     });
     functionMap["paste"] = std::function<void(int, int)>([](int x, int y) {
+        Serial.println("MouseWorker: Paste action triggered at X: " + String(x) + ", Y: " + String(y));
         Keyboard.press(KEY_LEFT_CTRL);
         Keyboard.press('v');
         delay(100);
         Keyboard.releaseAll();
+        // Keyboard.write('v'); // Use write instead of press for paste
+        Mouse.click(MOUSE_LEFT);
     });
 }
 

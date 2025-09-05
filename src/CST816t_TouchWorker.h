@@ -3,6 +3,7 @@
 #include <cst816t.h>
 #include "pin_config.h"
 #include <map>
+#include <blecombo.h>
 
 #define DEBUG
 
@@ -162,12 +163,12 @@ void CST816t_TouchWorker::handleTouch() {
         }
 
         if (gesture_timeout) {
-            // no gesture
+            // no gesture but movement detected
+            debugPrint("no X: " + String(this->x) + ", Y: " + String(this->y));
             gestureCallbackBuffer = NULL;
             if(callbacks["noGesture"] != NULL){
                 callbacks["noGesture"](this->x, this->y);
             }
-            debugPrint("no X: " + String(this->x) + ", Y: " + String(this->y));
             if (swipe_read) {
                 // too late
             } else {

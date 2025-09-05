@@ -56,9 +56,14 @@ void setup() {
     mouseWorker.init();
     mouseWorker.setScrollSpeed(15);
     mouseWorker.setMouseSpeed(2);
+    mouseWorker.setMode(MouseWorker::Mode::MOUSE_MODE);
+
     cst816t_touchWorker.init();
     cst816t_touchWorker.setMaxGestureTime(500);
     cst816t_touchWorker.setRotation(CST816t_TouchWorker::USB_LEFT);
+    cst816t_touchWorker.setActionFunction("noGesture", [](int x, int y) {
+        mouseWorker.getFunction("move")(x, y);
+    });
     // buttonWorker.init();
     guiWorker.init();
     guiWorker.onFunctionChange([](String item, String action, String function) {

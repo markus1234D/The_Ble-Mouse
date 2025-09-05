@@ -27,10 +27,7 @@ public:
     void onBrightnessChange(valChangeFunc func) {onBrightnessChangeCallback = func;}
     void onRotationChange(valChangeFunc func) {onRotationChangeCallback = func;}
     void onModeChange(valChangeFunc func) {onModeChangeCallback = func;}
-    int getXMin();
-    int getXMax();
-    int getYMin();
-    int getYMax();
+
     void notify(String message);
     void onFunctionChange(funcChangeFunc func) { onFunctionChangeCallback = func; }
 
@@ -55,6 +52,7 @@ private:
     valChangeFunc onModeChangeCallback = NULL;
     funcChangeFunc onFunctionChangeCallback = NULL;
 
+private:
     // Private member functions
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
     String extractCommand(const String& input);
